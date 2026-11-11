@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: fedoraicons.com
+      - name: Read pinned library revision
+        id: lock
+        run: echo "rev=$(jq -r .revision fedoraicons.com/src/data/source-lock.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: fedora-icons/fedora-icons
+          ref: ${{ steps.lock.outputs.rev }}
+          path: fedora-icons
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: fedoraicons.com/package-lock.json
+      - run: npm ci
+        working-directory: fedoraicons.com
+      - run: npm run check
+        working-directory: fedoraicons.com

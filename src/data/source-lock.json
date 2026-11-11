@@ -1,0 +1,12 @@
+{
+  "repository": "fedora-icons/fedora-icons",
+  "revision": "2afb7bb7d90906b3384bd26058a2e3466c2ee93a",
+  "dirty": false,
+  "manifestSha256": "1b5902e1953261ac73b3b8b2f7579059d1b9c2c0bb1b735c47df61621305fdb4",
+  "snapshotSha256": {
+    "regular": "5dcaffa40213d4b7a06d912217309d369528e0484c8c307cfb179e58016643c9",
+    "filled": "39deace12041717b3688d595d931cf4c61b1dc1cc4d36829976edcbc4d6668a1",
+    "duocolor": "05dda7e3f2d6bbd13c00fac9f8fe814618323b019b4ed5ed2638a98cca437304",
+    "duotone": "62686f1daaea00e1fb163e172d9a75b7a01e6c40f7885ef13b71936bfb3b5818"
+  }
+}

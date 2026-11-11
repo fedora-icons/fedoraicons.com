@@ -1,0 +1,5 @@
+{
+  "$comment": "Brand icons approved for website display and download. Each entry must record owner, official source, retrieval date, terms, and per-style SVG paths under public/brands/. Figma reference drawings are not approved by default. See docs/ASSETS.md.",
+  "disclaimer": "All brand icons belong to their respective owners.",
+  "approved": []
+}

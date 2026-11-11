@@ -1,0 +1,159 @@
+@import '@fontsource-variable/funnel-display/wght.css';
+@import '@fontsource-variable/asta-sans/wght.css';
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Semantic tokens. Components use these names (bg-surface, text-muted, ...)
+ * so Light and Dark stay in one place. Brand blue is the library's own
+ * default duo primary (#245B9E light / #93C5FD dark).
+ */
+@theme {
+  --font-display: 'Funnel Display Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Asta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-sunken: var(--c-sunken);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-brand: var(--c-brand);
+  --color-brand-ink: var(--c-brand-ink);
+  --color-brand-soft: var(--c-brand-soft);
+  --color-focus: var(--c-focus);
+  --color-danger: var(--c-danger);
+  --color-success: var(--c-success);
+}
+
+:root {
+  color-scheme: light;
+  --c-canvas: #fbfbfa;
+  --c-surface: #ffffff;
+  --c-sunken: #f3f3f1;
+  --c-ink: #212121;
+  --c-muted: #5c5c5c;
+  --c-faint: #8a8a8a;
+  --c-line: #e7e7e4;
+  --c-line-strong: #cfcfcb;
+  --c-brand: #245b9e;
+  --c-brand-ink: #ffffff;
+  --c-brand-soft: #e8eff8;
+  --c-focus: #245b9e;
+  --c-danger: #b42318;
+  --c-success: #15803d;
+  /* Live duo roles for the grid and previews. */
+  --fedora-primary: #245b9e;
+  --fedora-secondary: #5b87b7;
+}
+
+.dark {
+  color-scheme: dark;
+  --c-canvas: #121212;
+  --c-surface: #1b1b1b;
+  --c-sunken: #232323;
+  --c-ink: #f2f2f2;
+  --c-muted: #b4b4b4;
+  --c-faint: #8c8c8c;
+  --c-line: #2c2c2c;
+  --c-line-strong: #3d3d3d;
+  --c-brand: #93c5fd;
+  --c-brand-ink: #10233b;
+  --c-brand-soft: #1b2a3c;
+  --c-focus: #93c5fd;
+  --c-danger: #fca5a5;
+  --c-success: #86efac;
+  --fedora-primary: #93c5fd;
+  --fedora-secondary: #60a5fa;
+}
+
+@layer base {
+  html {
+    background: var(--c-canvas);
+    color: var(--c-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    min-height: 100dvh;
+    background: var(--c-canvas);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--c-brand-soft);
+  }
+  kbd {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  /* Icon glyphs inherit the cell's color; duo roles come from the CSS vars. */
+  .glyph > svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .icon-cell {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 88px;
+  }
+  .checkerboard {
+    background-color: var(--c-surface);
+    background-image:
+      linear-gradient(45deg, var(--c-sunken) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--c-sunken) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--c-sunken) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--c-sunken) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+  .prose-docs p,
+  .prose-docs li {
+    color: var(--c-muted);
+    line-height: 1.65;
+  }
+  .prose-docs strong {
+    color: var(--c-ink);
+    font-weight: 600;
+  }
+  .prose-docs code:not(pre code) {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--c-sunken);
+    border-radius: 6px;
+    padding: 0.1em 0.35em;
+    color: var(--c-ink);
+  }
+  .prose-docs a {
+    color: var(--c-brand);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

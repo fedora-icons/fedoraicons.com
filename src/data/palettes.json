@@ -1,0 +1,137 @@
+{
+  "defaultPalette": "Blue",
+  "palettes": [
+    {
+      "name": "Slate",
+      "light": {
+        "primary": "#475569",
+        "secondary": "#64748B"
+      },
+      "dark": {
+        "primary": "#CBD5E1",
+        "secondary": "#94A3B8"
+      }
+    },
+    {
+      "name": "Blue",
+      "light": {
+        "primary": "#245B9E",
+        "secondary": "#5B87B7"
+      },
+      "dark": {
+        "primary": "#93C5FD",
+        "secondary": "#60A5FA"
+      }
+    },
+    {
+      "name": "Sky",
+      "light": {
+        "primary": "#0369A1",
+        "secondary": "#0284C7"
+      },
+      "dark": {
+        "primary": "#7DD3FC",
+        "secondary": "#38BDF8"
+      }
+    },
+    {
+      "name": "Cyan",
+      "light": {
+        "primary": "#0E7490",
+        "secondary": "#0891B2"
+      },
+      "dark": {
+        "primary": "#67E8F9",
+        "secondary": "#22D3EE"
+      }
+    },
+    {
+      "name": "Teal",
+      "light": {
+        "primary": "#0F766E",
+        "secondary": "#0D9488"
+      },
+      "dark": {
+        "primary": "#5EEAD4",
+        "secondary": "#2DD4BF"
+      }
+    },
+    {
+      "name": "Green",
+      "light": {
+        "primary": "#15803D",
+        "secondary": "#16A34A"
+      },
+      "dark": {
+        "primary": "#86EFAC",
+        "secondary": "#4ADE80"
+      }
+    },
+    {
+      "name": "Lime",
+      "light": {
+        "primary": "#4D7C0F",
+        "secondary": "#648C1C"
+      },
+      "dark": {
+        "primary": "#BEF264",
+        "secondary": "#A3E635"
+      }
+    },
+    {
+      "name": "Yellow",
+      "light": {
+        "primary": "#856800",
+        "secondary": "#9B7C00"
+      },
+      "dark": {
+        "primary": "#FDE68A",
+        "secondary": "#FACC15"
+      }
+    },
+    {
+      "name": "Amber",
+      "light": {
+        "primary": "#92400E",
+        "secondary": "#B56A00"
+      },
+      "dark": {
+        "primary": "#FCD34D",
+        "secondary": "#FBBF24"
+      }
+    },
+    {
+      "name": "Orange",
+      "light": {
+        "primary": "#C2410C",
+        "secondary": "#CF641A"
+      },
+      "dark": {
+        "primary": "#FDBA74",
+        "secondary": "#FB923C"
+      }
+    },
+    {
+      "name": "Red",
+      "light": {
+        "primary": "#B91C1C",
+        "secondary": "#DC4B47"
+      },
+      "dark": {
+        "primary": "#FCA5A5",
+        "secondary": "#F87171"
+      }
+    },
+    {
+      "name": "Rose",
+      "light": {
+        "primary": "#BE185D",
+        "secondary": "#D94B83"
+      },
+      "dark": {
+        "primary": "#FDA4AF",
+        "secondary": "#FB7185"
+      }
+    }
+  ]
+}

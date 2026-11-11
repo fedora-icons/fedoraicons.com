@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fedora Icons</title>
+    <meta name="description" content="Search, customize, and export Fedora Icons in Regular, Solid, Duocolor, and Duotone." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Apply the saved or system theme before first paint.
+      (function () {
+        var pref = 'system';
+        try { pref = localStorage.getItem('fedora-theme') || 'system'; } catch (e) {}
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Fedora Icons needs JavaScript to search and export icons.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
