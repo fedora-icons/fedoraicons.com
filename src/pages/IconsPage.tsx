@@ -267,9 +267,11 @@ export function IconsPage() {
   return (
     <div className={`${CONTAINER} pb-16 pt-8 sm:pt-12`}>
       <div className="mb-5 max-w-2xl">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the right icon, then ship it.</h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the <span className="text-brand">right</span> icon, then ship it.</h1>
         <p className="mt-2 text-base text-muted">
-          {nf.format(total)} open-source icons in {catalog.styles.length} styles, drawn on a {catalog.grid}px grid with {catalog.strokeWidth}px strokes.
+          {nf.format(total)} open-source icons with soft, rounded line work, drawn in{' '}
+          {new Intl.ListFormat('en', { type: 'conjunction' }).format(catalog.styles.map((s) => STYLE_META[s].label))}.
+          Set the size, stroke weight, and colors once, and every icon and download follows.
         </p>
       </div>
 
@@ -283,7 +285,7 @@ export function IconsPage() {
         />
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center gap-3">
+      <div className="mt-5 flex flex-wrap items-center gap-3">
         <Segmented
           fill
           label="Icon style"
@@ -308,7 +310,7 @@ export function IconsPage() {
           />
         )}
         {(!brandsView || brandEntries.length > 0) && (
-          <p className="text-sm text-muted" aria-live="polite" aria-atomic="true">{summary}</p>
+          <p className="sr-only" aria-live="polite" aria-atomic="true">{summary}</p>
         )}
         <div className="ml-auto flex items-center gap-3">
           {!desktop && (

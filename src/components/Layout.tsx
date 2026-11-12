@@ -3,32 +3,10 @@ import { Link, Outlet } from 'react-router-dom';
 import markRegular from '../brand/mark-regular.svg?raw';
 import { lock } from '../lib/catalog';
 import { CONTAINER, PaneHostContext } from '../lib/layout';
-import { useTheme, type ThemePreference } from '../lib/theme';
-import { UiIcon, type UiIconName } from './ui';
-
-const THEME_ORDER: ThemePreference[] = ['system', 'light', 'dark'];
-const THEME_META: Record<ThemePreference, { icon: UiIconName; label: string }> = {
-  system: { icon: 'monitor', label: 'System' },
-  light: { icon: 'sun', label: 'Light' },
-  dark: { icon: 'moon', label: 'Dark' },
-};
-
-function ThemeToggle() {
-  const { preference, setPreference } = useTheme();
-  const next = THEME_ORDER[(THEME_ORDER.indexOf(preference) + 1) % THEME_ORDER.length];
-  const label = `Theme: ${THEME_META[preference].label}. Switch to ${THEME_META[next].label}.`;
-  return (
-    <button
-      type="button"
-      onClick={() => setPreference(next)}
-      aria-label={label}
-      title={label}
-      className="-mr-2 inline-flex size-9 items-center justify-center rounded-lg text-ink transition hover:bg-sunken"
-    >
-      <UiIcon name={THEME_META[preference].icon} />
-    </button>
-  );
-}
+import { LIBRARY_URL } from '../lib/links';
+import { HeaderActions } from './HeaderActions';
+import { ThemeToggle } from './ThemeToggle';
+import { UiIcon } from './ui';
 
 const footerLink = 'inline-flex items-center gap-1 rounded text-muted underline-offset-2 transition hover:text-ink hover:underline';
 
@@ -45,10 +23,12 @@ export function Layout() {
             <div className={`${CONTAINER} flex h-14 items-center gap-2`}>
               <Link to="/" className="flex shrink-0 items-center gap-2 rounded-lg pr-1 text-ink" aria-label="Fedora Icons home">
                 <span className="glyph size-7 text-ink" aria-hidden="true" dangerouslySetInnerHTML={{ __html: markRegular }} />
-                <span className="whitespace-nowrap font-display text-[17px] font-semibold tracking-tight">Fedora Icons</span>
+                <span className="whitespace-nowrap font-display text-[20px] font-semibold tracking-tight">Fedora Icons</span>
               </Link>
-              <div className="ml-auto flex items-center">
-                <ThemeToggle />
+              <div className="ml-auto flex items-center gap-2 md:gap-5">
+                <HeaderActions />
+                {/* With the desktop side pane open, the toggle lives in the pane's bar. */}
+                <ThemeToggle className="-mr-2 [:root:has(#side-pane-body)_&]:hidden" />
               </div>
             </div>
           </header>
@@ -61,7 +41,7 @@ export function Layout() {
                 <Link to="/docs" className={footerLink}>
                   <UiIcon name="book-open" className="size-4" /> Docs
                 </Link>
-                <a href="https://github.com/fedora-icons/fedora-icons" className={footerLink}>
+                <a href={LIBRARY_URL} className={footerLink}>
                   GitHub <UiIcon name="link-external" className="size-3.5" />
                 </a>
                 <span>

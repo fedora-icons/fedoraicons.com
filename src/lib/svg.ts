@@ -157,3 +157,28 @@ export function prepareGridSvg(source: string): string {
     (_, w: string) => `stroke-width="${w}" style="stroke-width:calc(${w}px * var(--stroke-scale, 1))"`,
   );
 }
+
+const SHAPES = new Set(['path', 'circle', 'ellipse', 'rect', 'polygon', 'polyline', 'line']);
+
+/**
+ * Does this artwork draw some of its parts as filled shapes (dots, solid
+ * details, or outlines converted to fills)? Those parts keep their drawn
+ * weight when the stroke width changes. Duotone's translucent tint and
+ * mask/clip stencils are not counted.
+ */
+export function hasFilledDetails(source: string): boolean {
+  const root = parse(source);
+  for (const node of Array.from(root.querySelectorAll('*'))) {
+    if (!SHAPES.has(node.nodeName)) continue;
+    const fill = node.getAttribute('fill');
+    if (!fill || fill === 'none') continue;
+    if (node.closest('mask, clipPath, defs')) continue;
+    let translucent = false;
+    for (let el: Element | null = node; el && el !== root; el = el.parentElement) {
+      const opacity = el.getAttribute('opacity') ?? el.getAttribute('fill-opacity');
+      if (opacity !== null && Number(opacity) < 1) { translucent = true; break; }
+    }
+    if (!translucent) return true;
+  }
+  return false;
+}

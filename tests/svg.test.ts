@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from '../src/lib/catalog';
-import { BASE_STROKE, buildSvg, hasModifierRole, hasSecondaryRole, prepareGridSvg } from '../src/lib/svg';
+import { BASE_STROKE, buildSvg, hasFilledDetails, hasModifierRole, hasSecondaryRole, prepareGridSvg } from '../src/lib/svg';
 import { danglingRefs, styleSvgs } from './helpers';
 
 const parse = (svg: string) => new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
@@ -100,5 +100,15 @@ describe('autoStroke', () => {
     expect(autoStroke(44)).toBe(1.05);
     expect(autoStroke(512)).toBe(0.85);
     expect(autoStroke(16)).toBeGreaterThan(1.25);
+  });
+});
+
+describe('hasFilledDetails', () => {
+  it('flags filled parts that do not follow the stroke, ignoring the Duotone tint', () => {
+    expect(hasFilledDetails(styleSvgs('regular')['cloud-moon'])).toBe(true);
+    expect(hasFilledDetails(styleSvgs('duotone')['cloud-moon'])).toBe(true);
+    expect(hasFilledDetails(styleSvgs('regular').search)).toBe(false);
+    // Duotone search only adds a translucent tint, which is not a filled detail.
+    expect(hasFilledDetails(styleSvgs('duotone').search)).toBe(false);
   });
 });

@@ -54,7 +54,9 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   whole grid and carried into exports. Selecting an icon shows its inspector:
   previews, style, modifiers, the same controls, exports, and React usage. On
   mobile both open as a modal bottom sheet (native `<dialog>`).
-- **Size and stroke**: icons default to 48px (Auto stroke 1.01px). Stroke is **Auto** by default and
+- **Size and stroke**: icons default to 48px (Auto stroke 1.01px). Size is a
+  slider over what the grid previews (16–64px, 4px steps) plus a px field for
+  any export size from 8 to 512. Stroke is **Auto** by default and
   follows size, in 24px grid units: 1.25px at 24px, 0.85px at 64px, linear
   between and held at 0.85px above 64px. Moving the slider (0.5–2.5px) fixes a
   value until "Use auto". Every authored stroke is scaled by the same factor,
@@ -76,8 +78,19 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 - **Brands**: the last option in the style switcher (`/?style=brands`; the old
   `/brands` URL redirects). Regular/Solid only, gated by `src/data/brands.json`.
   It is empty until assets are approved, so it shows a deliberate empty state.
+- **Header**: Get started (the library on GitHub, new tab), Download (one ZIP
+  of every core icon in every style, untouched library SVGs in `regular/`,
+  `solid/`, `duocolor/`, `duotone/`, plus LICENSE and README, built in the
+  browser from the pinned snapshot), Figma (the Figma file,
+  new tab; `FIGMA_URL` in `src/lib/links.ts`), and Pricing. Phones get a menu.
+- **Pricing** (`/pricing`): a placeholder. It names no plans or prices; it says
+  pricing is coming and that the current set is free under the library license.
+- **Code samples**: dark in both themes, with syntax colors (highlight.js
+  core with TSX, HTML, CSS, and shell, loaded on demand). Shell samples are
+  shown as a terminal.
 - **Docs** (linked from the footer, with GitHub): SVG, React, Figma, colors, sizes, modifiers, accessibility,
-  licensing, and source revision.
+  licensing, and source revision. The side nav marks the section being read,
+  and in-page links scroll smoothly (instantly with reduced motion).
 
 ## Layout
 

@@ -162,8 +162,11 @@ describe('Side pane (desktop)', () => {
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.808');
     expect(within(pane).getByText('Auto')).toBeTruthy();
 
+    // The slider covers what the grid previews; larger sizes go in the px field.
+    expect(within(pane).getByRole('slider', { name: 'Size' }).getAttribute('max')).toBe('64');
+
     // Auto stroke follows the size.
-    await user.click(within(pane).getByRole('button', { name: '24' }));
+    fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '24' } });
     expect(grid.style.getPropertyValue('--glyph-size')).toBe('24px');
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('1');
 
@@ -171,7 +174,7 @@ describe('Side pane (desktop)', () => {
     const slider = within(pane).getByRole('slider', { name: 'Stroke width' });
     fireEvent.change(slider, { target: { value: '2.5' } });
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('2');
-    await user.click(within(pane).getByRole('button', { name: '32' }));
+    fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '32' } });
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('2');
     await user.click(within(pane).getByRole('button', { name: 'Use auto' }));
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.936');
@@ -192,7 +195,12 @@ describe('Side pane (desktop)', () => {
     const user = userEvent.setup();
     renderAt('/');
     const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    const feedback = within(pane).getByRole('link', { name: /Feedback/ });
+    expect(feedback.getAttribute('href')).toBe('https://github.com/fedora-icons/fedoraicons.com/issues/new');
     await user.click(within(pane).getByRole('button', { name: 'Collapse panel' }));
+    expect(within(pane).queryByRole('link', { name: /Feedback/ })).toBeNull();
+    // The theme toggle sits beside the collapse button, and stays on the rail.
+    expect(within(pane).getByRole('button', { name: /^Theme:/ })).toBeTruthy();
     expect(within(pane).getByRole('button', { name: 'Expand panel' }).getAttribute('aria-expanded')).toBe('false');
     expect(document.getElementById('side-pane-body')!.hidden).toBe(true);
     expect(localStorage.getItem('fedora-pane-collapsed')).toBe('1');
@@ -215,6 +223,7 @@ describe('Side pane (desktop)', () => {
     await user.click((await screen.findAllByRole('button', { name: 'search' }))[0]);
     const preview = await within(pane).findByRole('img', { name: /search, Regular, scaled preview/ });
     expect(preview.innerHTML).toContain('stroke-width="2"');
+    await user.click(within(pane).getByRole('button', { name: 'React' }));
     expect(within(pane).getByText(/React package draws the standard 1.25px stroke/)).toBeTruthy();
   });
 });
@@ -273,7 +282,7 @@ describe('Multi-select and ZIP export (desktop)', () => {
     await user.keyboard('{/Shift}');
 
     fireEvent.change(within(pane).getByRole('slider', { name: 'Stroke width' }), { target: { value: '2' } });
-    await user.click(within(pane).getByRole('button', { name: '32' }));
+    fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '32' } });
     await user.click(within(pane).getByRole('button', { name: 'Download 2 icons (.zip)' }));
     await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/);
 
@@ -310,5 +319,51 @@ describe('Search tips', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('Inspector sections (desktop)', () => {
+  beforeEach(useDesktop);
+
+  it('keeps React usage collapsed until expanded, with Copy still available', async () => {
+    const user = userEvent.setup();
+    renderAt('/?icon=search');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    const toggle = await within(pane).findByRole('button', { name: 'React' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)!.hidden).toBe(true);
+    expect(within(pane).getByRole('button', { name: 'Copy' })).toBeTruthy();
+    await user.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    const code = pane.querySelector('.code-block code')!;
+    expect(code.textContent).toMatch(/^import \{ SearchRegular \} from '@fedora-icons\/react';/);
+    // Syntax colors arrive once the highlighter loads.
+    await vi.waitFor(() => expect(pane.querySelector('.code-block .hljs-keyword')?.textContent).toBe('import'));
+  });
+
+  it('previews a duo palette variant by switching the whole site theme', async () => {
+    const user = userEvent.setup();
+    renderAt('/?style=duocolor');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    const variant = within(pane).getByRole('radiogroup', { name: 'Palette variant' });
+    await user.click(within(variant).getByRole('radio', { name: 'Dark' }));
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(localStorage.getItem('fedora-theme')).toBe('dark');
+    await user.click(within(variant).getByRole('radio', { name: 'Light' }));
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
+
+  it('says when filled parts of an icon keep their weight as the stroke changes', async () => {
+    renderAt('/?icon=cloud-moon');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    // Default 48px Auto stroke is 1.01px, not the drawn 1.25px.
+    expect(await within(pane).findByText(/drawn as filled shapes/)).toBeTruthy();
+  });
+
+  it('does not show that note for an icon made only of strokes', async () => {
+    renderAt('/?icon=search');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    await within(pane).findByRole('img', { name: /search, Regular/ });
+    expect(within(pane).queryByText(/drawn as filled shapes/)).toBeNull();
   });
 });

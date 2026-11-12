@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { palettes, type StyleId } from '../lib/catalog';
 import {
-  autoStroke, DEFAULT_LOOK, GRID_MAX_SIZE, isCustomized, MAX_SIZE, MIN_SIZE, resolveLook, SIZE_PRESETS, STROKE_MAX, STROKE_MIN, STROKE_STEP,
+  autoStroke, DEFAULT_LOOK, GRID_MAX_SIZE, isCustomized, MAX_SIZE, MIN_SIZE, resolveLook, SIZE_SLIDER_MAX, SIZE_SLIDER_MIN, SIZE_STEP, STROKE_MAX, STROKE_MIN, STROKE_STEP,
   strokeAdjustable, strokeOf, type Look,
 } from '../lib/look';
 import { BASE_STROKE, isDuo, isHexColor } from '../lib/svg';
@@ -43,14 +43,44 @@ export function ColorField({ label, value, onChange, hint }: { label: string; va
   );
 }
 
-export function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
+export function Section({
+  title, children, aside, collapsible = false, defaultOpen = true,
+}: {
+  title: string;
+  children: ReactNode;
+  aside?: ReactNode;
+  /** Render the title as a disclosure button that shows or hides the body. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const bodyId = useId();
+  const heading = 'font-sans text-xs font-semibold uppercase tracking-[0.08em] text-muted';
+  const expanded = !collapsible || open;
   return (
     <section className="border-t border-line px-5 py-4">
-      <div className="mb-3 flex min-h-7 items-center justify-between gap-2">
-        <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-muted">{title}</h3>
+      <div className={`flex min-h-7 items-center justify-between gap-2 ${expanded ? 'mb-3' : ''}`}>
+        {collapsible ? (
+          <h3 className={heading}>
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-controls={bodyId}
+              onClick={() => setOpen((o) => !o)}
+              className="-mx-1 inline-flex items-center gap-1.5 rounded px-1 uppercase hover:text-ink"
+            >
+              <UiIcon name="chevron-down" className={`size-3.5 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} />
+              {title}
+            </button>
+          </h3>
+        ) : (
+          <h3 className={heading}>{title}</h3>
+        )}
         {aside}
       </div>
-      {children}
+      <div id={bodyId} hidden={!expanded}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -59,7 +89,7 @@ const fmtStroke = (w: number) => `${Number(w.toFixed(2))}px`;
 
 /** Size, stroke, and color: shared by the grid-wide panel and the inspector. */
 export function CustomizeControls({
-  look, onChange, style, kind = 'core', footnote,
+  look, onChange, style, kind = 'core', footnote, strokeFootnote,
 }: {
   look: Look;
   onChange: (patch: Partial<Look>) => void;
@@ -67,8 +97,10 @@ export function CustomizeControls({
   kind?: 'core' | 'brand';
   /** Extra color notes that only make sense for one icon (e.g. single contour). */
   footnote?: ReactNode;
+  /** Stroke notes that only make sense for one icon (e.g. filled parts). */
+  strokeFootnote?: ReactNode;
 }) {
-  const { resolved: theme } = useTheme();
+  const { resolved: theme, setPreference } = useTheme();
   const uid = useId();
   const duo = isDuo(style);
   const r = resolveLook(look, theme);
@@ -108,18 +140,21 @@ export function CustomizeControls({
           </label>
         )}
       >
-        <div className="grid grid-cols-6 gap-1.5">
-          {SIZE_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              aria-pressed={look.size === preset}
-              onClick={() => commitSize(preset)}
-              className={`h-8 rounded-md text-sm tabular-nums transition-colors ${look.size === preset ? 'bg-ink text-canvas' : 'bg-sunken text-ink hover:bg-line'}`}
-            >
-              {preset}
-            </button>
-          ))}
+        <label htmlFor={`${uid}-size`} className="sr-only">Size</label>
+        <input
+          id={`${uid}-size`}
+          type="range"
+          min={SIZE_SLIDER_MIN}
+          max={SIZE_SLIDER_MAX}
+          step={SIZE_STEP}
+          value={Math.min(SIZE_SLIDER_MAX, Math.max(SIZE_SLIDER_MIN, look.size))}
+          aria-valuetext={`${look.size}px`}
+          onChange={(e) => commitSize(Number(e.target.value))}
+          className="range w-full"
+        />
+        <div className="mt-1 flex justify-between text-[11px] tabular-nums text-faint" aria-hidden="true">
+          <span>{SIZE_SLIDER_MIN}px</span>
+          <span>{SIZE_SLIDER_MAX}px</span>
         </div>
         {look.size > GRID_MAX_SIZE && (
           <p className="mt-2 text-xs leading-relaxed text-faint">The grid previews up to {GRID_MAX_SIZE}px; exports use {look.size}px.</p>
@@ -164,6 +199,7 @@ export function CustomizeControls({
                 ? `Auto follows the size: ${fmtStroke(BASE_STROKE)} at 24px, ${fmtStroke(autoStroke(64))} at 64px. Measured on the 24px grid.`
                 : 'Fixed at your value for every size. Measured on the 24px grid.'}
             </p>
+            {strokeFootnote}
           </>
         ) : (
           <p className="text-xs leading-relaxed text-faint">
@@ -179,7 +215,8 @@ export function CustomizeControls({
             label="Palette variant"
             size="sm"
             value={r.mode}
-            onChange={(v) => onChange({ paletteMode: v, custom: null })}
+            // The variant is previewed on the matching background: switch the site theme.
+            onChange={(v) => { setPreference(v); onChange({ custom: null }); }}
             options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
           />
         )}
@@ -216,7 +253,9 @@ export function CustomizeControls({
               <p className="text-xs leading-relaxed text-faint">Duotone keeps its 16% interior tint of the primary color.</p>
             )}
             {footnote}
-            <p className="text-xs text-faint">{look.custom ? 'Custom colors' : `${r.palette.name} · ${r.mode === 'light' ? 'Light' : 'Dark'}`}</p>
+            <p className="text-xs text-faint">
+              {look.custom ? 'Custom colors' : `${r.palette.name} · ${r.mode === 'light' ? 'Light' : 'Dark'}`}. Light and Dark also switch the site, so you see the palette on its background.
+            </p>
           </div>
         ) : (
           <>
