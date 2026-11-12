@@ -1,12 +1,12 @@
 {
   "repository": "fedora-icons/fedora-icons",
-  "revision": "fa39ec53cd6c9bafd4909af12c9d1a11c354e4e3",
+  "revision": "460a0479b13ba397a5c52069e089c76645903e7c",
   "dirty": false,
-  "manifestSha256": "82fc6179c4672ac16dd4ba091081fffc6d63eefe270d19d129695488e1071583",
+  "manifestSha256": "419a81c9836c16f77f09085ec8994a0e3f3822d8517718d86b7699229fdb2756",
   "snapshotSha256": {
-    "regular": "daf5267799eb558cc0587de2c3becc117c1af815f46cb2f2a8ed66a7586cad76",
-    "filled": "48086c06126c10cef4dceb96afa45d326c0011b36bdd7931dcee7b7288168c0f",
-    "duocolor": "a67d561578222306662b5b3e482f11070ddc4c305818de5079943d9e8125dede",
-    "duotone": "9e38075e11cae1194a19579aa7994f802c78aefe5b6f4877bc67bc9c53f1ba10"
+    "regular": "f9c63a940abc1103af895c282442e2d1c325005ae6d0ac230c3293af1a73d22e",
+    "filled": "3e1fa88fedd862a8f56aa7a5719850c6ed5fe5a8a1d5294d4aaea80141c2505a",
+    "duocolor": "348d95648e55a1bb9489d3c55c4908204d7779bed9812c92595845700a898c13",
+    "duotone": "b43c3e440182cce9caa235a303bb0a0769a880ce7d0df4b41577ca257f42f6be"
   }
 }
