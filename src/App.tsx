@@ -6,6 +6,7 @@ import { ThemeProvider } from './lib/theme';
 import { IconsPage } from './pages/IconsPage';
 
 const DocsPage = lazy(() => import('./pages/DocsPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
 
 function NotFound() {
   return (
@@ -29,6 +30,7 @@ export function App() {
                 {/* Brands moved into the style switcher; keep old links working. */}
                 <Route path="brands" element={<Navigate to="/?style=brands" replace />} />
                 <Route path="docs" element={<DocsPage />} />
+                <Route path="pricing" element={<PricingPage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>

@@ -11,7 +11,6 @@ export interface Look {
   strokeWidth: number | null;
   mono: string | null;
   paletteName: string;
-  paletteMode: 'light' | 'dark' | null;
   custom: { primary: string; secondary: string } | null;
 }
 
@@ -20,11 +19,15 @@ export const DEFAULT_LOOK: Look = {
   strokeWidth: null,
   mono: null,
   paletteName: palettes.defaultPalette,
-  paletteMode: null,
   custom: null,
 };
 
-export const SIZE_PRESETS = [16, 20, 24, 32, 48, 64];
+/**
+ * Size slider range: what the grid can preview. The px field still accepts
+ * MIN_SIZE..MAX_SIZE for exports.
+ */
+export const SIZE_SLIDER_MIN = 16;
+export const SIZE_STEP = 4;
 export const MIN_SIZE = 8;
 export const MAX_SIZE = 512;
 export const STROKE_MIN = 0.5;
@@ -32,6 +35,7 @@ export const STROKE_MAX = 2.5;
 export const STROKE_STEP = 0.05;
 /** The grid shows icons at the chosen size up to this, so cells stay legible. */
 export const GRID_MAX_SIZE = 64;
+export const SIZE_SLIDER_MAX = GRID_MAX_SIZE;
 
 /**
  * Size-linked stroke, in 24px grid units: 1.25 at 24px (the library's
@@ -56,7 +60,8 @@ export const strokeAdjustable = (style: StyleId, kind: 'core' | 'brand' = 'core'
   kind === 'core' && style !== 'filled';
 
 export function resolveLook(look: Look, theme: 'light' | 'dark') {
-  const mode = look.paletteMode ?? theme;
+  // Duo palettes use the variant for the site theme being previewed.
+  const mode = theme;
   const palette = palettes.palettes.find((p) => p.name === look.paletteName) ?? palettes.palettes[0];
   return {
     mono: look.mono ?? INK[theme],
@@ -71,8 +76,7 @@ export const isCustomized = (look: Look) =>
   || look.strokeWidth !== DEFAULT_LOOK.strokeWidth
   || look.mono !== null
   || look.custom !== null
-  || look.paletteName !== DEFAULT_LOOK.paletteName
-  || look.paletteMode !== null;
+  || look.paletteName !== DEFAULT_LOOK.paletteName;
 
 /** CSS variables that restyle inline grid SVGs without rebuilding them. */
 export function gridVars(look: Look, style: StyleId, theme: 'light' | 'dark', kind: 'core' | 'brand' = 'core') {

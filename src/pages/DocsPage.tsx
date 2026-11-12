@@ -1,7 +1,8 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { catalog, lock, palettes, STYLE_META } from '../lib/catalog';
 import { copyText } from '../lib/export';
+import { CodeBlock } from '../components/CodeBlock';
 import { useToast } from '../components/ui';
 import { CONTAINER } from '../lib/layout';
 
@@ -22,21 +23,23 @@ const SECTIONS = [
   ['source', 'Source data'],
 ] as const;
 
-function Code({ children, lang }: { children: string; lang?: string }) {
+function Code({ children, lang }: { children: string; lang: string }) {
   const toast = useToast();
   return (
-    <div className="group relative my-4">
-      <pre className="overflow-x-auto rounded-xl border border-line bg-sunken p-4 font-mono text-[13px] leading-relaxed text-ink" data-lang={lang}>
-        <code>{children}</code>
-      </pre>
-      <button
-        type="button"
-        onClick={() => copyText(children).then(() => toast('success', 'Copied'), (e: Error) => toast('error', e.message))}
-        className="absolute right-2 top-2 rounded-md border border-line bg-surface px-2 py-1 text-xs font-medium text-muted opacity-100 transition hover:text-ink sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-      >
-        Copy
-      </button>
-    </div>
+    <CodeBlock
+      code={children}
+      lang={lang}
+      className="my-4"
+      action={(
+        <button
+          type="button"
+          onClick={() => copyText(children).then(() => toast('success', 'Copied'), (e: Error) => toast('error', e.message))}
+          className="rounded-md px-2 py-1 text-xs font-medium text-[#c9c9cf] transition hover:bg-white/10 hover:text-white"
+        >
+          Copy
+        </button>
+      )}
+    />
   );
 }
 
@@ -49,19 +52,87 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
+/** Line below the top of the viewport that decides the current section. */
+const SPY_OFFSET = 120;
+
+/**
+ * The section being read: the last one whose top has passed SPY_OFFSET, or
+ * the last section once the page bottom is reached. A clicked link wins until
+ * its scroll settles, so short final sections can still be selected.
+ */
+function useActiveSection() {
+  const [active, setActive] = useState<string>(SECTIONS[0][0]);
+  const pinned = useRef<{ id: string; timer: number } | null>(null);
+
+  useEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      if (pinned.current) return;
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      let current: string = SECTIONS[0][0];
+      for (const [id] of SECTIONS) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= SPY_OFFSET) current = id;
+      }
+      setActive(atBottom ? SECTIONS[SECTIONS.length - 1][0] : current);
+    };
+    const onScroll = () => {
+      if (pinned.current) {
+        // Release the clicked section once scrolling stops.
+        window.clearTimeout(pinned.current.timer);
+        pinned.current.timer = window.setTimeout(() => { pinned.current = null; }, 150);
+      }
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  const choose = (id: string) => {
+    if (pinned.current) window.clearTimeout(pinned.current.timer);
+    // If no scroll follows (already in place), release shortly after.
+    pinned.current = { id, timer: window.setTimeout(() => { pinned.current = null; }, 600) };
+    setActive(id);
+  };
+  return [active, choose] as const;
+}
+
 export default function DocsPage() {
   const { hash } = useLocation();
+  const arrived = useRef(false);
   useEffect(() => {
-    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+    // Arriving from another page jumps straight to the section; links within
+    // the page glide there (CSS `scroll-behavior` on .docs-page, off for reduced motion).
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView(arrived.current ? undefined : { behavior: 'instant' });
+    arrived.current = true;
   }, [hash]);
+  const [active, setActive] = useActiveSection();
 
   return (
-    <div className={`${CONTAINER} flex gap-12 pb-20 pt-8 sm:pt-12`}>
+    <div className={`docs-page ${CONTAINER} flex gap-12 pb-20 pt-8 sm:pt-12`}>
       <nav aria-label="Documentation" className="sticky top-8 hidden h-fit w-44 shrink-0 md:block">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">On this page</p>
-        <ul className="space-y-1 text-sm">
+        <ul className="border-l border-line text-sm">
           {SECTIONS.map(([id, label]) => (
-            <li key={id}><a href={`#${id}`} className="block rounded-md px-2 py-1 text-muted hover:bg-sunken hover:text-ink">{label}</a></li>
+            <li key={id}>
+              <a
+                href={`#${id}`}
+                aria-current={active === id ? 'location' : undefined}
+                onClick={() => setActive(id)}
+                className={`-ml-px block border-l-2 py-1.5 pl-3 pr-2 transition-colors ${
+                  active === id ? 'border-brand font-medium text-ink' : 'border-transparent text-muted hover:border-line-strong hover:text-ink'
+                }`}
+              >
+                {label}
+              </a>
+            </li>
           ))}
         </ul>
       </nav>
@@ -96,12 +167,8 @@ export default function DocsPage() {
         </Section>
 
         <Section id="react" title="React">
-          <p><strong><code>@fedora-icons/react</code> is not yet published to npm.</strong> The package lives in <a href="https://github.com/fedora-icons/react-fedora">fedora-icons/react-fedora</a>. Installing that repository directly from GitHub does not build the package, so build a local tarball:</p>
-          <Code lang="sh">{`git clone https://github.com/fedora-icons/react-fedora.git
-cd react-fedora
-npm ci
-npm pack`}</Code>
-          <Code lang="sh">{`npm install /absolute/path/to/react-fedora/fedora-icons-react-0.1.0.tgz`}</Code>
+          <p><a href="https://www.npmjs.com/package/@fedora-icons/react"><code>@fedora-icons/react</code></a> is on npm. It supports React 18 and 19, ships TypeScript types, and tree-shakes to the icons you import. Source: <a href="https://github.com/fedora-icons/react-fedora">fedora-icons/react-fedora</a>.</p>
+          <Code lang="sh">{`npm install @fedora-icons/react`}</Code>
           <p>Each style is a separate component: the canonical name in PascalCase plus a style suffix. <code>fuel-pump</code> becomes <code>FuelPumpRegular</code>, <code>FuelPumpFilled</code>, <code>FuelPumpDuocolor</code>, and <code>FuelPumpDuotone</code>. Solid icons use the <code>Filled</code> suffix. Names starting with a digit get an <code>Icon</code> prefix.</p>
           <Code lang="tsx">{`import { CameraRegular, CameraDuocolor } from '@fedora-icons/react';
 

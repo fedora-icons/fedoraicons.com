@@ -4,9 +4,9 @@ import { copyFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dist = new URL('../dist/', import.meta.url).pathname;
-for (const route of ['brands', 'docs']) {
+for (const route of ['brands', 'docs', 'pricing']) {
   mkdirSync(join(dist, route), { recursive: true });
   copyFileSync(join(dist, 'index.html'), join(dist, route, 'index.html'));
 }
 copyFileSync(join(dist, 'index.html'), join(dist, '404.html'));
-console.log('Wrote route entry points: /brands/, /docs/, 404.html');
+console.log('Wrote route entry points: /brands/, /docs/, /pricing/, 404.html');

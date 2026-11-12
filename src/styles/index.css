@@ -191,6 +191,52 @@ dialog.sheet::backdrop {
   background: rgb(0 0 0 / 0.45);
 }
 
+/* Code blocks are dark in both themes, with syntax colors. */
+.code-block {
+  --code-bg: #17171a;
+  --code-bar: #1f1f23;
+  --code-ink: #e6e6e3;
+  --code-muted: #9a9aa2;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border: 1px solid #17171a;
+}
+.dark .code-block {
+  --code-bg: #0c0c0e;
+  --code-bar: #151518;
+  border-color: #2a2a2e;
+}
+.code-block .code-bar {
+  background: var(--code-bar);
+  color: var(--code-muted);
+}
+.code-block .hljs-keyword,
+.code-block .hljs-selector-tag,
+.code-block .hljs-built_in { color: #ff8f88; }
+.code-block .hljs-string,
+.code-block .hljs-regexp { color: #a5d6ff; }
+.code-block .hljs-title,
+.code-block .hljs-title.function_,
+.code-block .hljs-title.class_ { color: #d2a8ff; }
+.code-block .hljs-name,
+.code-block .hljs-selector-class,
+.code-block .hljs-selector-id { color: #7ee787; }
+.code-block .hljs-attr,
+.code-block .hljs-attribute,
+.code-block .hljs-property,
+.code-block .hljs-variable,
+.code-block .hljs-number,
+.code-block .hljs-literal { color: #79c0ff; }
+.code-block .hljs-comment,
+.code-block .hljs-meta { color: #8b949e; font-style: italic; }
+.code-block .hljs-tag,
+.code-block .hljs-punctuation { color: #b9b9c0; }
+
+/* Docs: in-page anchor links scroll smoothly. */
+html:has(.docs-page) {
+  scroll-behavior: smooth;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

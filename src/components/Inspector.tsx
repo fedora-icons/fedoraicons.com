@@ -6,10 +6,14 @@ import {
 import { copyPng, copyText, downloadBlob, svgBlob, svgToPng } from '../lib/export';
 import { reactSnippet } from '../lib/react-snippet';
 import { resolveLook, strokeAdjustable, strokeOf, type Look } from '../lib/look';
-import { BASE_STROKE, buildSvg, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
+import { BASE_STROKE, buildSvg, hasFilledDetails, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
 import { useTheme } from '../lib/theme';
+import { CodeBlock } from './CodeBlock';
 import { ColorField, CustomizeControls, Section } from './Customize';
-import { Button, IconButton, Segmented, useToast } from './ui';
+import { ThemeToggle } from './ThemeToggle';
+import { Button, IconButton, Segmented, UiIcon, useToast } from './ui';
+
+const FEEDBACK_URL = 'https://github.com/fedora-icons/fedoraicons.com/issues/new';
 
 const PNG_SCALES = [1, 2, 4] as const;
 
@@ -46,6 +50,7 @@ export function Inspector({
   const showSecondary = !!source && duo && hasSecondaryRole(source);
   const modifierDefault = source?.match(/var\(--fedora-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase() ?? null;
   const showModifier = !!source && hasModifierRole(source);
+  const filledParts = useMemo(() => !!source && hasFilledDetails(source), [source]);
 
   const colors = useMemo(() => ({
     primary: duo ? r.duo.primary : r.mono,
@@ -172,6 +177,11 @@ export function Inspector({
         onChange={onLookChange}
         style={style}
         kind={kind}
+        strokeFootnote={filledParts && strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (
+          <p className="mt-2 rounded-lg bg-sunken px-2.5 py-2 text-xs leading-relaxed text-muted">
+            Parts of this icon are drawn as filled shapes, so they keep their drawn weight while its lines change.
+          </p>
+        )}
         footnote={(
           <>
             {style === 'duocolor' && !showSecondary && (
@@ -246,6 +256,8 @@ export function Inspector({
 
       {snippet && (
         <Section
+          collapsible
+          defaultOpen={false}
           title="React"
           aside={(
             <button type="button" className="text-xs font-medium text-brand hover:underline" onClick={() => run(() => copyText(snippet), 'React example copied')}>
@@ -253,12 +265,12 @@ export function Inspector({
             </button>
           )}
         >
-          <pre className="overflow-x-auto rounded-xl bg-sunken p-3 font-mono text-[12.5px] leading-relaxed text-ink"><code>{snippet}</code></pre>
+          <CodeBlock code={snippet} lang="tsx" />
           <p className="mt-2 text-xs leading-relaxed text-faint">
             {strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (
               <><strong className="font-medium text-ink">The React package draws the standard {BASE_STROKE}px stroke at every size</strong>; use Download SVG to keep this {strokeWidth}px stroke. </>
             )}
-            <code className="font-mono">@fedora-icons/react</code> is not yet published to npm. <a className="text-brand underline underline-offset-2" href="/docs#react">Install from a local package</a>.
+            Install with <code className="font-mono text-ink">npm install @fedora-icons/react</code>. <a className="text-brand underline underline-offset-2" href="/docs#react">React docs</a>.
           </p>
         </Section>
       )}
@@ -319,7 +331,25 @@ export function SidePane({
             aria-controls="side-pane-body"
             onClick={() => onCollapsedChange(!collapsed)}
           />
+          {!collapsed && <ThemeToggle />}
+          {!collapsed && (
+            <a
+              href={FEEDBACK_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-ink transition hover:bg-sunken"
+            >
+              <UiIcon name="message-smile-square" className="size-5" />
+              Feedback
+              <span className="sr-only"> (opens GitHub in a new tab)</span>
+            </a>
+          )}
         </div>
+        {collapsed && (
+          <div className="flex justify-center pt-2.5">
+            <ThemeToggle />
+          </div>
+        )}
         <div
           id="side-pane-body"
           hidden={collapsed}
