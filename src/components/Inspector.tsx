@@ -1,134 +1,75 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  compositionLabel, modifierFamily, palettes, STYLE_META, type IconEntry, type StyleId,
+  compositionLabel, modifierFamily, STYLE_META, type IconEntry, type StyleId,
 } from '../lib/catalog';
 import { copyPng, copyText, downloadBlob, svgBlob, svgToPng } from '../lib/export';
 import { reactSnippet } from '../lib/react-snippet';
-import { buildSvg, hasModifierRole, hasSecondaryRole, isDuo, isHexColor } from '../lib/svg';
+import { resolveLook, strokeAdjustable, strokeOf, type Look } from '../lib/look';
+import { BASE_STROKE, buildSvg, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
 import { useTheme } from '../lib/theme';
+import { ColorField, CustomizeControls, Section } from './Customize';
 import { Button, IconButton, Segmented, useToast } from './ui';
 
-const SIZE_PRESETS = [16, 20, 24, 32, 48, 64];
-const MIN_SIZE = 8;
-const MAX_SIZE = 512;
 const PNG_SCALES = [1, 2, 4] as const;
-const INK = { light: '#212121', dark: '#F2F2F2' };
 
 export interface InspectorProps {
   icon: IconEntry;
   style: StyleId;
   styles: readonly StyleId[];
   source: string | undefined;
+  look: Look;
+  onLookChange: (patch: Partial<Look>) => void;
   onStyleChange: (style: StyleId) => void;
   onSelectIcon: (name: string) => void;
   onClose: () => void;
-  /** Brand assets: no React package, no duo controls. */
+  /** Brand assets: no React package, no duo controls, no stroke control. */
   kind?: 'core' | 'brand';
   headingId: string;
 }
 
-function ColorField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
-  const id = useId();
-  const [text, setText] = useState(value);
-  useEffect(() => setText(value), [value]);
-  const valid = isHexColor(text);
-  return (
-    <div className="flex items-center gap-3">
-      <input
-        type="color"
-        aria-label={`${label} picker`}
-        value={value.length === 7 ? value : '#000000'}
-        onChange={(e) => onChange(e.target.value.toUpperCase())}
-        className="size-9 shrink-0 cursor-pointer rounded-lg border border-line-strong bg-surface p-1 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
-      />
-      <div className="min-w-0 flex-1">
-        <label htmlFor={id} className="block text-xs font-medium text-muted">{label}</label>
-        <input
-          id={id}
-          value={text}
-          spellCheck={false}
-          aria-invalid={!valid}
-          aria-describedby={hint ? `${id}-hint` : undefined}
-          onChange={(e) => {
-            setText(e.target.value);
-            if (isHexColor(e.target.value)) onChange(e.target.value.toUpperCase());
-          }}
-          onBlur={() => setText(value)}
-          className={`mt-0.5 h-8 w-full rounded-md border bg-surface px-2 font-mono text-sm uppercase ${valid ? 'border-line' : 'border-danger'}`}
-        />
-        {hint && <p id={`${id}-hint`} className="mt-1 text-xs text-faint">{hint}</p>}
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
-  return (
-    <section className="border-t border-line px-5 py-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-muted">{title}</h3>
-        {aside}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export function Inspector({
-  icon, style, styles, source, onStyleChange, onSelectIcon, onClose, kind = 'core', headingId,
+  icon, style, styles, source, look, onLookChange, onStyleChange, onSelectIcon, onClose, kind = 'core', headingId,
 }: InspectorProps) {
   const toast = useToast();
   const { resolved: theme } = useTheme();
   const duo = isDuo(style);
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const r = resolveLook(look, theme);
+  const size = look.size;
+  const strokeWidth = strokeAdjustable(style, kind) ? strokeOf(look) : undefined;
 
-  const [size, setSize] = useState(24);
-  const [sizeText, setSizeText] = useState('24');
-  const [mono, setMono] = useState(INK[theme]);
-  const [paletteName, setPaletteName] = useState(palettes.defaultPalette);
-  const [paletteMode, setPaletteMode] = useState<'light' | 'dark'>(theme);
-  const [custom, setCustom] = useState<{ primary: string; secondary: string } | null>(null);
   const [modifier, setModifier] = useState<string | null>(null);
   const [scale, setScale] = useState<(typeof PNG_SCALES)[number]>(2);
   const [busy, setBusy] = useState(false);
 
-  // Follow the site theme until the user picks a color themselves.
-  const touchedMono = useRef(false);
-  const touchedMode = useRef(false);
-  useEffect(() => {
-    if (!touchedMono.current) setMono(INK[theme]);
-    if (!touchedMode.current) setPaletteMode(theme);
-  }, [theme]);
-
-  const palette = palettes.palettes.find((p) => p.name === paletteName) ?? palettes.palettes[0];
-  const duoColors = custom ?? palette[paletteMode];
   const showSecondary = !!source && duo && hasSecondaryRole(source);
   const modifierDefault = source?.match(/var\(--fedora-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase() ?? null;
   const showModifier = !!source && hasModifierRole(source);
 
   const colors = useMemo(() => ({
-    primary: duo ? duoColors.primary : mono,
-    secondary: showSecondary ? duoColors.secondary : undefined,
+    primary: duo ? r.duo.primary : r.mono,
+    secondary: showSecondary ? r.duo.secondary : undefined,
     modifier: showModifier ? (modifier ?? modifierDefault ?? undefined) : undefined,
-  }), [duo, duoColors, mono, showSecondary, showModifier, modifier, modifierDefault]);
+  }), [duo, r.duo.primary, r.duo.secondary, r.mono, showSecondary, showModifier, modifier, modifierDefault]);
 
   const build = (px: number, idPrefix?: string) => {
     if (!source) throw new Error('Icon artwork is still loading.');
-    return buildSvg(source, { ...colors, size: px, idPrefix });
+    return buildSvg(source, { ...colors, size: px, idPrefix, strokeWidth });
   };
 
   const preview = useMemo(() => {
     if (!source) return null;
     try {
       return {
-        large: buildSvg(source, { ...colors, size: 160, idPrefix: `${uid}-l` }),
-        native: buildSvg(source, { ...colors, size: 24, idPrefix: `${uid}-n` }),
-        actual: buildSvg(source, { ...colors, size: Math.min(size, 128), idPrefix: `${uid}-a` }),
+        large: buildSvg(source, { ...colors, size: 160, idPrefix: `${uid}-l`, strokeWidth }),
+        native: buildSvg(source, { ...colors, size: 24, idPrefix: `${uid}-n`, strokeWidth }),
+        actual: buildSvg(source, { ...colors, size: Math.min(size, 128), idPrefix: `${uid}-a`, strokeWidth }),
       };
     } catch {
       return null;
     }
-  }, [source, colors, size, uid]);
+  }, [source, colors, size, uid, strokeWidth]);
 
   const slug = STYLE_META[style].slug;
   const baseName = `${icon.name}-${slug}`;
@@ -146,16 +87,10 @@ export function Inspector({
     }
   };
 
-  const commitSize = (value: number) => {
-    const next = Math.round(Math.min(MAX_SIZE, Math.max(MIN_SIZE, value)));
-    setSize(next);
-    setSizeText(String(next));
-  };
-
   const snippet = kind === 'core'
     ? reactSnippet(icon.name, style, {
       size,
-      color: duo ? null : mono,
+      color: duo ? null : look.mono,
       primary: duo ? colors.primary : undefined,
       secondary: colors.secondary,
       modifier: showModifier && modifier ? modifier : undefined,
@@ -172,7 +107,7 @@ export function Inspector({
             {icon.composition && <> · Base <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(icon.composition!.base)}>{icon.composition.base}</button></>}
           </p>
         </div>
-        <IconButton icon="x" label="Close inspector" onClick={onClose} className="-mr-2 -mt-1" />
+        <IconButton icon="x" label="Clear selection" onClick={onClose} className="-mr-2 -mt-1" />
       </div>
 
       <div className="px-5 pb-4">
@@ -232,107 +167,29 @@ export function Inspector({
         </Section>
       )}
 
-      <Section title="Size">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {SIZE_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              aria-pressed={size === preset}
-              onClick={() => commitSize(preset)}
-              className={`h-8 min-w-10 rounded-md px-2 text-sm tabular-nums ${size === preset ? 'bg-ink text-canvas' : 'bg-sunken text-ink hover:bg-line'}`}
-            >
-              {preset}
-            </button>
-          ))}
-          <label className="ml-auto flex items-center gap-1.5 text-sm text-muted">
-            <span className="sr-only">Custom size in pixels</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={MIN_SIZE}
-              max={MAX_SIZE}
-              value={sizeText}
-              onChange={(e) => {
-                setSizeText(e.target.value);
-                const n = Number(e.target.value);
-                if (Number.isFinite(n) && n >= MIN_SIZE && n <= MAX_SIZE) setSize(Math.round(n));
-              }}
-              onBlur={() => commitSize(Number(sizeText) || 24)}
-              className="h-8 w-16 rounded-md border border-line-strong bg-surface px-2 text-right text-sm tabular-nums text-ink"
-            />
-            px
-          </label>
-        </div>
-      </Section>
-
-      <Section
-        title="Color"
-        aside={duo && (
-          <Segmented
-            label="Palette variant"
-            size="sm"
-            value={paletteMode}
-            onChange={(v) => { touchedMode.current = true; setPaletteMode(v); setCustom(null); }}
-            options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
-          />
-        )}
-      >
-        {duo ? (
-          <div className="space-y-3">
-            <div role="radiogroup" aria-label="Duo palette" className="flex flex-wrap gap-1.5">
-              {palettes.palettes.map((p) => {
-                const checked = !custom && p.name === paletteName;
-                return (
-                  <button
-                    key={p.name}
-                    type="button"
-                    role="radio"
-                    aria-checked={checked}
-                    aria-label={p.name}
-                    title={p.name}
-                    onClick={() => { setPaletteName(p.name); setCustom(null); }}
-                    className={`flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-surface ${checked ? 'ring-2 ring-ink' : ''}`}
-                  >
-                    <span className="flex size-6 overflow-hidden rounded-full border border-line" aria-hidden="true">
-                      <span className="flex-1" style={{ background: p[paletteMode].primary }} />
-                      <span className="flex-1" style={{ background: p[paletteMode].secondary }} />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <ColorField label="Primary" value={duoColors.primary} onChange={(v) => setCustom({ ...duoColors, primary: v })} />
-            {showSecondary ? (
-              <ColorField label="Secondary" value={duoColors.secondary} onChange={(v) => setCustom({ ...duoColors, secondary: v })} />
-            ) : null}
-            {style === 'duotone' && (
-              <p className="text-xs leading-relaxed text-faint">Duotone keeps its 16% interior tint of the primary color.</p>
-            )}
+      <CustomizeControls
+        look={look}
+        onChange={onLookChange}
+        style={style}
+        kind={kind}
+        footnote={(
+          <>
             {style === 'duocolor' && !showSecondary && (
               <p className="text-xs leading-relaxed text-faint">This icon is a single contour, so it is primary-only by design.</p>
             )}
-            <p className="text-xs text-faint">{custom ? 'Custom colors' : `${palette.name} · ${paletteMode === 'light' ? 'Light' : 'Dark'}`}</p>
-          </div>
-        ) : (
-          <ColorField
-            label="Foreground"
-            value={mono}
-            onChange={(v) => { touchedMono.current = true; setMono(v); }}
-            hint="Exports use this color. Inline SVG from the library inherits currentColor."
-          />
+            {showModifier && (
+              <div className="mt-3">
+                <ColorField
+                  label="Modifier glyph"
+                  value={modifier ?? modifierDefault ?? '#000000'}
+                  onChange={setModifier}
+                  hint={modifierDefault ? `Library default ${modifierDefault}` : undefined}
+                />
+              </div>
+            )}
+          </>
         )}
-        {showModifier && (
-          <div className="mt-3">
-            <ColorField
-              label="Modifier glyph"
-              value={modifier ?? modifierDefault ?? '#000000'}
-              onChange={setModifier}
-              hint={modifierDefault ? `Library default ${modifierDefault}` : undefined}
-            />
-          </div>
-        )}
-      </Section>
+      />
 
       <Section title="Export">
         <div className="space-y-2">
@@ -397,6 +254,9 @@ export function Inspector({
         >
           <pre className="overflow-x-auto rounded-xl bg-sunken p-3 font-mono text-[12.5px] leading-relaxed text-ink"><code>{snippet}</code></pre>
           <p className="mt-2 text-xs leading-relaxed text-faint">
+            {strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (
+              <><strong className="font-medium text-ink">The React package draws the standard {BASE_STROKE}px stroke at every size</strong>; use Download SVG to keep this {strokeWidth}px stroke. </>
+            )}
             <code className="font-mono">@fedora-icons/react</code> is not yet published to npm. <a className="text-brand underline underline-offset-2" href="/docs#react">Install from a local package</a>.
           </p>
         </Section>
@@ -406,47 +266,82 @@ export function Inspector({
   );
 }
 
-/** Desktop: a sticky side panel. Mobile: a modal bottom sheet (native dialog). */
-export function InspectorFrame({
-  desktop, open, onClose, headingId, children,
-}: { desktop: boolean; open: boolean; onClose: () => void; headingId: string; children: ReactNode }) {
+/**
+ * Desktop: a persistent, collapsible side pane rendered into the layout's
+ * pane slot (full height, beside the page). Mobile: a modal bottom sheet.
+ */
+export function SidePane({
+  desktop, host, collapsed, onCollapsedChange, sheetOpen, onDismiss, headingId, focusKey, children,
+}: {
+  desktop: boolean;
+  host: HTMLElement | null;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+  /** Mobile only: whether the sheet is showing. */
+  sheetOpen: boolean;
+  /** Escape / backdrop: clear the selection or close the sheet. */
+  onDismiss: () => void;
+  headingId: string;
+  /** Focus the pane heading whenever this changes to a non-null value. */
+  focusKey: string | null;
+  children: ReactNode;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (desktop || !dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open, desktop]);
+    if (sheetOpen && !dialog.open) dialog.showModal();
+    if (!sheetOpen && dialog.open) dialog.close();
+  }, [sheetOpen, desktop]);
 
   useEffect(() => {
-    if (open) requestAnimationFrame(() => document.getElementById(headingId)?.focus({ preventScroll: true }));
-  }, [open, headingId]);
+    if (focusKey === null) return;
+    requestAnimationFrame(() => document.getElementById(headingId)?.focus({ preventScroll: true }));
+  }, [focusKey, headingId]);
 
   if (desktop) {
-    if (!open) return null;
-    return (
+    if (!host) return null;
+    return createPortal(
       <aside
-        aria-labelledby={headingId}
-        onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }}
-        className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-[380px] shrink-0 overflow-y-auto border-l border-line bg-surface lg:block"
+        aria-label="Icon panel"
+        onKeyDown={(e) => { if (e.key === 'Escape' && !collapsed) { e.stopPropagation(); onDismiss(); } }}
+        className={`sticky top-0 flex h-dvh shrink-0 flex-col overflow-hidden border-l border-line bg-surface transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          collapsed ? 'w-14' : 'w-[380px]'
+        }`}
       >
-        {children}
-      </aside>
+        <div className={`flex h-14 shrink-0 items-center border-b border-line px-2.5 ${collapsed ? 'justify-center' : ''}`}>
+          <IconButton
+            icon="layout-sidebar-right"
+            label={collapsed ? 'Expand panel' : 'Collapse panel'}
+            aria-expanded={!collapsed}
+            aria-controls="side-pane-body"
+            onClick={() => onCollapsedChange(!collapsed)}
+          />
+        </div>
+        <div
+          id="side-pane-body"
+          hidden={collapsed}
+          className="min-h-0 w-[380px] flex-1 overflow-y-auto overscroll-contain"
+        >
+          {children}
+        </div>
+      </aside>,
+      host,
     );
   }
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby={headingId}
-      onCancel={(e) => { e.preventDefault(); onClose(); }}
-      onClick={(e) => { if (e.target === dialogRef.current) onClose(); }}
+      onCancel={(e) => { e.preventDefault(); onDismiss(); }}
+      onClick={(e) => { if (e.target === dialogRef.current) onDismiss(); }}
       className="sheet m-0 mt-auto max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-3xl border-t border-line bg-surface p-0 text-ink"
     >
       <div className="sticky top-0 z-10 flex justify-center bg-surface pb-1 pt-2" aria-hidden="true">
         <span className="h-1 w-10 rounded-full bg-line-strong" />
       </div>
-      {open && children}
+      {sheetOpen && children}
     </dialog>
   );
 }

@@ -23,6 +23,7 @@ export const UI_ICONS = [
   'search', 'x', 'download', 'copy', 'image', 'code', 'sun', 'moon', 'monitor',
   'check', 'info-circle', 'chevron-down', 'link', 'link-external', 'menu',
   'book-open', 'palette', 'arrow-left', 'filter', 'x-circle',
+  'layout-sidebar-right', 'settings-sliders', 'undo',
 ];
 
 const sha256 = (data) => createHash('sha256').update(data).digest('hex');

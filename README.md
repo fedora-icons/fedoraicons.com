@@ -44,21 +44,33 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 ## What the site does
 
 - **Catalog**: searches canonical names, aliases, tags, and categories; filters
-  by category; switches Regular, Solid (`filled`), Duocolor, and Duotone. Search,
-  category, style, and selected icon are kept in the URL. `/` focuses search;
-  the grid is one tab stop with arrow-key navigation.
-- **Inspector**: side panel on desktop, modal bottom sheet (native `<dialog>`)
-  on mobile. Large and native 24px previews, size, color, duo palettes, and
-  the modifier menu.
+  by category; switches Regular, Solid (`filled`), Duocolor, Duotone, and
+  Brands. Search, category, style, and selected icon are kept in the URL. The
+  search field stays pinned while scrolling; `/` focuses it. The grid is one
+  tab stop with arrow-key navigation.
+- **Side pane**: always present on desktop and collapsible (the choice is
+  remembered per browser). With no icon selected it is **Customize**: size,
+  stroke width, and color (duo palettes for Duocolor/Duotone) applied to the
+  whole grid and carried into exports. Selecting an icon shows its inspector:
+  previews, style, modifiers, the same controls, exports, and React usage. On
+  mobile both open as a modal bottom sheet (native `<dialog>`).
+- **Size and stroke**: icons default to 64px. Stroke is **Auto** by default and
+  follows size, in 24px grid units: 1.25px at 24px, 0.85px at 64px, linear
+  between and held at 0.85px above 64px. Moving the slider (0.5–2.5px) fixes a
+  value until "Use auto". Every authored stroke is scaled by the same factor,
+  so intentionally heavier strokes keep their proportions.
+  Solid and brand artwork have no stroke control. `@fedora-icons/react` cannot
+  change stroke weight, and the React panel says so.
 - **Exports**: Download SVG, Download PNG (1×/2×/4×, transparent), Copy SVG,
   Copy image, Copy name, and a React example. Exports resolve every CSS variable
   and `currentColor` to concrete colors and preserve masks, clip paths, IDs,
   and the Duotone 16% tint. No XAML export exists: its target dialect is undefined.
 - **Modifiers**: only the library's authored compositions (manifest
   `composition` entries) are offered. No arbitrary combinations are generated.
-- **Brands**: Regular/Solid only, gated by `src/data/brands.json`. It is empty
-  until assets are approved, so the page shows a deliberate empty state.
-- **Docs**: SVG, React, Figma, colors, sizes, modifiers, accessibility,
+- **Brands**: the last option in the style switcher (`/?style=brands`; the old
+  `/brands` URL redirects). Regular/Solid only, gated by `src/data/brands.json`.
+  It is empty until assets are approved, so it shows a deliberate empty state.
+- **Docs** (linked from the footer, with GitHub): SVG, React, Figma, colors, sizes, modifiers, accessibility,
   licensing, and source revision.
 
 ## Layout
@@ -69,9 +81,9 @@ scripts/postbuild.mjs     static route entry points + 404.html
 public/icons/<style>.json one lazily fetched SVG map per style (generated)
 src/data/*.json           catalog, palettes, UI glyphs, source lock (generated), brands (hand-edited)
 src/brand/                Fedora Icons mark (from Figma; see its README)
-src/lib/                  svg export, search, URL state, React snippet, theme
-src/components/           layout, grid, inspector, UI primitives
-src/pages/                Icons, Brands, Docs
+src/lib/                  svg export, search, URL state, look (customization), brands, React snippet, theme
+src/components/           layout, grid, side pane + inspector, customize controls, UI primitives
+src/pages/                Icons (core styles and Brands), Docs
 tests/                    Vitest suites
 ```
 

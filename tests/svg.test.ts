@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from '../src/lib/catalog';
-import { buildSvg, hasModifierRole, hasSecondaryRole } from '../src/lib/svg';
+import { BASE_STROKE, buildSvg, hasModifierRole, hasSecondaryRole, prepareGridSvg } from '../src/lib/svg';
 import { danglingRefs, styleSvgs } from './helpers';
 
 const parse = (svg: string) => new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
@@ -70,4 +70,35 @@ describe('buildSvg', () => {
     },
     30_000,
   );
+
+  it('scales every authored stroke proportionally and leaves geometry alone', () => {
+    const source = styleSvgs('regular').search;
+    const widths = (svg: string) => [...svg.matchAll(/stroke-width="([\d.]+)"/g)].map((m) => Number(m[1]));
+    const paths = (svg: string) => [...svg.matchAll(/ d="([^"]+)"/g)].map((m) => m[1]);
+    const out = buildSvg(source, { primary: '#000000', size: 24, strokeWidth: 2 });
+    expect(widths(out).every((w) => w === 2)).toBe(true);
+    expect(paths(out)).toEqual(paths(source));
+    // Default weight leaves the artwork's strokes untouched.
+    expect(widths(buildSvg(source, { primary: '#000000', size: 24, strokeWidth: BASE_STROKE }))).toEqual(widths(source));
+    // Heavier authored strokes keep their ratio to the standard weight.
+    const heavy = Object.values(styleSvgs('regular')).find((svg) => svg.includes('stroke-width="1.5"'))!;
+    expect(widths(buildSvg(heavy, { primary: '#000000', size: 24, strokeWidth: 2.5 }))).toContain(3);
+  });
+
+  it('lets the grid reweight strokes through a CSS variable', () => {
+    const out = prepareGridSvg(styleSvgs('regular').search);
+    expect(out).toContain('stroke-width="1.25" style="stroke-width:calc(1.25px * var(--stroke-scale, 1))"');
+    expect(parse(out).nodeName).toBe('svg');
+  });
+});
+
+describe('autoStroke', () => {
+  it('is 1.25 at 24px, 0.85 at 64px, linear between, and held above 64px', async () => {
+    const { autoStroke } = await import('../src/lib/look');
+    expect(autoStroke(24)).toBe(1.25);
+    expect(autoStroke(64)).toBe(0.85);
+    expect(autoStroke(44)).toBe(1.05);
+    expect(autoStroke(512)).toBe(0.85);
+    expect(autoStroke(16)).toBeGreaterThan(1.25);
+  });
 });

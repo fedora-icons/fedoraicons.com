@@ -1,0 +1,275 @@
+import { useEffect, useId, useState, type ReactNode } from 'react';
+import { palettes, type StyleId } from '../lib/catalog';
+import {
+  autoStroke, DEFAULT_LOOK, GRID_MAX_SIZE, isCustomized, MAX_SIZE, MIN_SIZE, resolveLook, SIZE_PRESETS, STROKE_MAX, STROKE_MIN, STROKE_STEP,
+  strokeAdjustable, strokeOf, type Look,
+} from '../lib/look';
+import { BASE_STROKE, isDuo, isHexColor } from '../lib/svg';
+import { useTheme } from '../lib/theme';
+import { IconButton, Segmented, UiIcon } from './ui';
+
+export function ColorField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
+  const id = useId();
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const valid = isHexColor(text);
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="color"
+        aria-label={`${label} picker`}
+        value={value.length === 7 ? value : '#000000'}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        className="size-9 shrink-0 cursor-pointer rounded-lg border border-line-strong bg-surface p-1 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
+      />
+      <div className="min-w-0 flex-1">
+        <label htmlFor={id} className="block text-xs font-medium text-muted">{label}</label>
+        <input
+          id={id}
+          value={text}
+          spellCheck={false}
+          aria-invalid={!valid}
+          aria-describedby={hint ? `${id}-hint` : undefined}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (isHexColor(e.target.value)) onChange(e.target.value.toUpperCase());
+          }}
+          onBlur={() => setText(value)}
+          className={`mt-0.5 h-8 w-full rounded-md border bg-surface px-2 font-mono text-sm uppercase ${valid ? 'border-line' : 'border-danger'}`}
+        />
+        {hint && <p id={`${id}-hint`} className="mt-1 text-xs text-faint">{hint}</p>}
+      </div>
+    </div>
+  );
+}
+
+export function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
+  return (
+    <section className="border-t border-line px-5 py-4">
+      <div className="mb-3 flex min-h-7 items-center justify-between gap-2">
+        <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-muted">{title}</h3>
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const fmtStroke = (w: number) => `${Number(w.toFixed(2))}px`;
+
+/** Size, stroke, and color: shared by the grid-wide panel and the inspector. */
+export function CustomizeControls({
+  look, onChange, style, kind = 'core', footnote,
+}: {
+  look: Look;
+  onChange: (patch: Partial<Look>) => void;
+  style: StyleId;
+  kind?: 'core' | 'brand';
+  /** Extra color notes that only make sense for one icon (e.g. single contour). */
+  footnote?: ReactNode;
+}) {
+  const { resolved: theme } = useTheme();
+  const uid = useId();
+  const duo = isDuo(style);
+  const r = resolveLook(look, theme);
+  const [sizeText, setSizeText] = useState(String(look.size));
+  useEffect(() => setSizeText(String(look.size)), [look.size]);
+
+  const commitSize = (value: number) => {
+    const next = Math.round(Math.min(MAX_SIZE, Math.max(MIN_SIZE, value)));
+    onChange({ size: next });
+    setSizeText(String(next));
+  };
+  const canStroke = strokeAdjustable(style, kind);
+  const stroke = strokeOf(look);
+
+  return (
+    <>
+      <Section
+        title="Size"
+        aside={(
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            <span className="sr-only">Custom size in pixels</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={MIN_SIZE}
+              max={MAX_SIZE}
+              value={sizeText}
+              onChange={(e) => {
+                setSizeText(e.target.value);
+                const n = Number(e.target.value);
+                if (Number.isFinite(n) && n >= MIN_SIZE && n <= MAX_SIZE) onChange({ size: Math.round(n) });
+              }}
+              onBlur={() => commitSize(Number(sizeText) || DEFAULT_LOOK.size)}
+              className="h-7 w-14 rounded-md border border-line-strong bg-surface px-2 text-right font-mono text-xs tabular-nums text-ink"
+            />
+            px
+          </label>
+        )}
+      >
+        <div className="grid grid-cols-6 gap-1.5">
+          {SIZE_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              aria-pressed={look.size === preset}
+              onClick={() => commitSize(preset)}
+              className={`h-8 rounded-md text-sm tabular-nums transition-colors ${look.size === preset ? 'bg-ink text-canvas' : 'bg-sunken text-ink hover:bg-line'}`}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        {look.size > GRID_MAX_SIZE && (
+          <p className="mt-2 text-xs leading-relaxed text-faint">The grid previews up to {GRID_MAX_SIZE}px; exports use {look.size}px.</p>
+        )}
+      </Section>
+
+      <Section
+        title="Stroke width"
+        aside={canStroke && (
+          <span className="flex items-center gap-2 text-xs">
+            {look.strokeWidth === null ? (
+              <span className="rounded bg-sunken px-1.5 py-0.5 font-medium text-muted">Auto</span>
+            ) : (
+              <button type="button" onClick={() => onChange({ strokeWidth: null })} className="font-medium text-brand hover:underline">
+                Use auto
+              </button>
+            )}
+            <span className="font-mono tabular-nums text-ink">{fmtStroke(stroke)}</span>
+          </span>
+        )}
+      >
+        {canStroke ? (
+          <>
+            <label htmlFor={`${uid}-stroke`} className="sr-only">Stroke width</label>
+            <input
+              id={`${uid}-stroke`}
+              type="range"
+              min={STROKE_MIN}
+              max={STROKE_MAX}
+              step={STROKE_STEP}
+              value={stroke}
+              aria-valuetext={`${fmtStroke(stroke)}${look.strokeWidth === null ? ', automatic for this size' : ''}`}
+              onChange={(e) => onChange({ strokeWidth: Number(e.target.value) })}
+              className="range w-full"
+            />
+            <div className="mt-1 flex justify-between text-[11px] tabular-nums text-faint" aria-hidden="true">
+              <span>{fmtStroke(STROKE_MIN)}</span>
+              <span>{fmtStroke(STROKE_MAX)}</span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-faint">
+              {look.strokeWidth === null
+                ? `Auto follows the size: ${fmtStroke(BASE_STROKE)} at 24px, ${fmtStroke(autoStroke(64))} at 64px. Measured on the 24px grid.`
+                : 'Fixed at your value for every size. Measured on the 24px grid.'}
+            </p>
+          </>
+        ) : (
+          <p className="text-xs leading-relaxed text-faint">
+            {kind === 'brand' ? 'Brand marks are shown exactly as provided.' : 'Solid icons are filled shapes, so they have no stroke to adjust.'}
+          </p>
+        )}
+      </Section>
+
+      <Section
+        title="Color"
+        aside={duo && (
+          <Segmented
+            label="Palette variant"
+            size="sm"
+            value={r.mode}
+            onChange={(v) => onChange({ paletteMode: v, custom: null })}
+            options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+          />
+        )}
+      >
+        {duo ? (
+          <div className="space-y-3">
+            <div role="radiogroup" aria-label="Duo palette" className="flex flex-wrap gap-1.5">
+              {palettes.palettes.map((p) => {
+                const checked = !look.custom && p.name === r.palette.name;
+                return (
+                  <button
+                    key={p.name}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    aria-label={p.name}
+                    title={p.name}
+                    onClick={() => onChange({ paletteName: p.name, custom: null })}
+                    className={`flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-surface ${checked ? 'ring-2 ring-ink' : ''}`}
+                  >
+                    <span className="flex size-6 overflow-hidden rounded-full border border-line" aria-hidden="true">
+                      <span className="flex-1" style={{ background: p[r.mode].primary }} />
+                      <span className="flex-1" style={{ background: p[r.mode].secondary }} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <ColorField label="Primary" value={r.duo.primary} onChange={(v) => onChange({ custom: { ...r.duo, primary: v } })} />
+            {style === 'duocolor' && (
+              <ColorField label="Secondary" value={r.duo.secondary} onChange={(v) => onChange({ custom: { ...r.duo, secondary: v } })} />
+            )}
+            {style === 'duotone' && (
+              <p className="text-xs leading-relaxed text-faint">Duotone keeps its 16% interior tint of the primary color.</p>
+            )}
+            {footnote}
+            <p className="text-xs text-faint">{look.custom ? 'Custom colors' : `${r.palette.name} · ${r.mode === 'light' ? 'Light' : 'Dark'}`}</p>
+          </div>
+        ) : (
+          <>
+            <ColorField
+              label="Foreground"
+              value={r.mono}
+              onChange={(v) => onChange({ mono: v })}
+              hint={look.mono ? undefined : 'Following the site theme.'}
+            />
+            {footnote}
+          </>
+        )}
+      </Section>
+    </>
+  );
+}
+
+/** The pane's content when no icon is selected. */
+export function CustomizePanel({
+  look, onChange, onReset, onClose, style, kind, headingId,
+}: {
+  look: Look;
+  onChange: (patch: Partial<Look>) => void;
+  onReset: () => void;
+  /** Mobile sheet only. */
+  onClose?: () => void;
+  style: StyleId;
+  kind: 'core' | 'brand';
+  headingId: string;
+}) {
+  return (
+    <div className="flex min-h-full flex-col">
+      <div className="flex items-start gap-3 px-5 pb-4 pt-5">
+        <div className="min-w-0 flex-1">
+          <h2 id={headingId} tabIndex={-1} className="text-xl font-semibold outline-none">Customize</h2>
+          <p className="mt-1 text-sm text-muted">
+            Applies to every icon in the grid and carries into exports. Select an icon to download or copy it.
+          </p>
+        </div>
+        {onClose && <IconButton icon="x" label="Close customize" onClick={onClose} className="-mr-2 -mt-1" />}
+      </div>
+      <CustomizeControls look={look} onChange={onChange} style={style} kind={kind} />
+      <div className="border-t border-line px-5 py-4">
+        <button
+          type="button"
+          disabled={!isCustomized(look)}
+          onClick={onReset}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:text-faint disabled:no-underline"
+        >
+          <UiIcon name="undo" className="size-4" />
+          Reset to defaults
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -109,7 +109,41 @@
   }
   .icon-cell {
     content-visibility: auto;
-    contain-intrinsic-size: auto 88px;
+    contain-intrinsic-size: auto 130px;
+  }
+  /* Native range input, themed with the semantic tokens. */
+  .range {
+    appearance: none;
+    height: 20px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--c-line-strong);
+  }
+  .range::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--c-line-strong);
+  }
+  .range::-webkit-slider-thumb {
+    appearance: none;
+    margin-top: -6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--c-surface);
+    border: 1.5px solid var(--c-ink);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+  }
+  .range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--c-surface);
+    border: 1.5px solid var(--c-ink);
   }
   .checkerboard {
     background-color: var(--c-surface);

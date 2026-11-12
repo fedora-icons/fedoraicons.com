@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { catalog, lock, palettes, STYLE_META } from '../lib/catalog';
 import { copyText } from '../lib/export';
 import { useToast } from '../components/ui';
+import { CONTAINER } from '../lib/layout';
 
 const nf = new Intl.NumberFormat('en-US');
 const compositions = catalog.icons.filter((i) => i.composition);
@@ -55,8 +56,8 @@ export default function DocsPage() {
   }, [hash]);
 
   return (
-    <div className="mx-auto flex max-w-[1100px] gap-12 px-4 pb-20 pt-8 sm:px-6 sm:pt-12">
-      <nav aria-label="Documentation" className="sticky top-20 hidden h-fit w-44 shrink-0 md:block">
+    <div className={`${CONTAINER} flex gap-12 pb-20 pt-8 sm:pt-12`}>
+      <nav aria-label="Documentation" className="sticky top-8 hidden h-fit w-44 shrink-0 md:block">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">On this page</p>
         <ul className="space-y-1 text-sm">
           {SECTIONS.map(([id, label]) => (

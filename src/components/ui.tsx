@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { createContext, startTransition, useCallback, useContext, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import uiIcons from '../data/ui-icons.json';
 
 export type UiIconName = keyof typeof uiIcons;
@@ -46,25 +46,75 @@ export function IconButton({ label, icon, className = '', ...props }: ButtonHTML
 
 /** Accessible single-choice segmented control (radio group semantics). */
 export function Segmented<T extends string>({
-  label, value, options, onChange, size = 'md',
+  label, value, options, onChange, size = 'md', fill = false,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string; title?: string }[];
   onChange: (value: T) => void;
   size?: 'sm' | 'md';
+  /** Below the sm breakpoint, span the full width with equal options. */
+  fill?: boolean;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
-  const index = options.findIndex((o) => o.value === value);
+  const groupRef = useRef<HTMLDivElement>(null);
+  // Show the new selection immediately; let the (possibly heavy) parent
+  // update follow as a transition so the slide starts on the next frame.
+  const [pending, setPending] = useState<T | null>(null);
+  const [seenValue, setSeenValue] = useState(value);
+  if (seenValue !== value) {
+    // The committed value changed (our transition landed, or something else
+    // such as Back/Forward changed it): it wins over any pending selection.
+    setSeenValue(value);
+    setPending(null);
+  }
+  const current = pending ?? value;
+  const index = options.findIndex((o) => o.value === current);
+  const select = (next: T) => {
+    setPending(next);
+    startTransition(() => onChange(next));
+  };
+  const [pill, setPill] = useState<{ left: number; width: number; animate: boolean } | null>(null);
+
+  // Measure the active option so the highlight can slide between options.
+  // Re-measure on resize (fonts loading, layout changes) without animating.
+  useLayoutEffect(() => {
+    const measure = (animate: boolean) => {
+      const el = refs.current[index];
+      if (!el) { setPill(null); return; }
+      setPill((prev) => ({ left: el.offsetLeft, width: el.offsetWidth, animate: animate && prev !== null }));
+    };
+    measure(true);
+    const group = groupRef.current;
+    if (!group || typeof ResizeObserver === 'undefined') return;
+    let lastWidth = group.offsetWidth;
+    const observer = new ResizeObserver(() => {
+      if (group.offsetWidth === lastWidth) return;
+      lastWidth = group.offsetWidth;
+      measure(false);
+    });
+    observer.observe(group);
+    return () => observer.disconnect();
+  }, [index]);
+
   const move = (next: number) => {
     const target = (next + options.length) % options.length;
-    onChange(options[target].value);
+    select(options[target].value);
     refs.current[target]?.focus();
   };
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border border-line bg-sunken p-0.5">
+    <div ref={groupRef} role="radiogroup" aria-label={label} className={`relative rounded-lg border border-line bg-sunken p-0.5 ${fill ? 'flex w-full sm:inline-flex sm:w-auto' : 'inline-flex'}`}>
+      {pill && (
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-y-0.5 left-0 rounded-md bg-surface shadow-sm ring-1 ring-line ${
+            pill.animate ? 'transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
+          }`}
+          style={{ width: pill.width, transform: `translateX(${pill.left}px)` }}
+        />
+      )}
       {options.map((option, i) => {
-        const checked = option.value === value;
+        const checked = option.value === current;
         return (
           <button
             key={option.value}
@@ -74,13 +124,13 @@ export function Segmented<T extends string>({
             aria-checked={checked}
             title={option.title}
             tabIndex={checked || (index < 0 && i === 0) ? 0 : -1}
-            onClick={() => onChange(option.value)}
+            onClick={() => select(option.value)}
             onKeyDown={(e) => {
               if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); move(i + 1); }
               if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); move(i - 1); }
             }}
-            className={`rounded-md font-medium transition ${size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-sm'} ${
-              checked ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
+            className={`relative z-10 rounded-md font-medium transition-colors duration-200 ${size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-sm'} ${fill ? 'max-sm:min-w-0 max-sm:flex-1 max-sm:px-1' : ''} ${
+              checked ? `text-ink ${pill ? '' : 'bg-surface shadow-sm ring-1 ring-line'}` : 'text-muted hover:text-ink'
             }`}
           >
             {option.label}

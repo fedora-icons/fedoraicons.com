@@ -17,7 +17,21 @@ export interface SvgBuildOptions extends SvgColorOptions {
   size: number;
   /** Prefix for every internal ID, so several copies can share one document. */
   idPrefix?: string;
+  /**
+   * Stroke weight in 24px grid units. Every authored stroke is scaled by
+   * `strokeWidth / BASE_STROKE`, so icons with intentionally heavier strokes
+   * keep their proportions. Omit to keep the artwork's own strokes.
+   */
+  strokeWidth?: number;
 }
+
+/** The library's standard stroke weight on its 24px grid. */
+export const BASE_STROKE = 1.25;
+
+const scaleStroke = (value: string, factor: number) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? String(Math.round(n * factor * 1000) / 1000) : value;
+};
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const PAINT_ATTRS = ['fill', 'stroke', 'color', 'stop-color', 'flood-color', 'lighting-color'];
@@ -109,6 +123,14 @@ export function buildSvg(source: string, options: SvgBuildOptions): string {
   };
   walk(root, options.primary);
 
+  if (options.strokeWidth !== undefined && options.strokeWidth !== BASE_STROKE) {
+    const factor = options.strokeWidth / BASE_STROKE;
+    for (const node of all) {
+      const value = node.getAttribute('stroke-width');
+      if (value) node.setAttribute('stroke-width', scaleStroke(value, factor));
+    }
+  }
+
   const size = String(Math.round(options.size * 100) / 100);
   root.setAttribute('width', size);
   root.setAttribute('height', size);
@@ -122,4 +144,16 @@ export function scopeSvg(source: string, idPrefix: string): string {
   const root = parse(source);
   namespaceIds(root, idPrefix);
   return new XMLSerializer().serializeToString(root);
+}
+
+/**
+ * Grid-only variant: lets a `--stroke-scale` CSS variable on an ancestor
+ * reweight every stroke live, without re-rendering each SVG. Exports never
+ * use this; they go through `buildSvg`.
+ */
+export function prepareGridSvg(source: string): string {
+  return source.replace(
+    /stroke-width="([\d.]+)"/g,
+    (_, w: string) => `stroke-width="${w}" style="stroke-width:calc(${w}px * var(--stroke-scale, 1))"`,
+  );
 }

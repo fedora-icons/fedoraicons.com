@@ -1,11 +1,10 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/ui';
 import { ThemeProvider } from './lib/theme';
 import { IconsPage } from './pages/IconsPage';
 
-const BrandsPage = lazy(() => import('./pages/BrandsPage'));
 const DocsPage = lazy(() => import('./pages/DocsPage'));
 
 function NotFound() {
@@ -27,7 +26,8 @@ export function App() {
             <Routes>
               <Route element={<Layout />}>
                 <Route index element={<IconsPage />} />
-                <Route path="brands" element={<BrandsPage />} />
+                {/* Brands moved into the style switcher; keep old links working. */}
+                <Route path="brands" element={<Navigate to="/?style=brands" replace />} />
                 <Route path="docs" element={<DocsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>

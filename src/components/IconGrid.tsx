@@ -31,21 +31,25 @@ const Cell = memo(function Cell({
         data-index={index}
         tabIndex={tabbable ? 0 : -1}
         aria-label={name}
+        title={name.length > 22 ? name : undefined}
         aria-pressed={selected}
         onClick={() => onSelect(name)}
         onFocus={() => onFocusIndex(index)}
-        className={`group relative flex aspect-square w-full items-center justify-center rounded-xl text-ink transition-colors focus-visible:outline-offset-0 ${
-          selected ? 'bg-brand-soft ring-1 ring-brand' : 'hover:bg-sunken'
+        className={`group relative flex aspect-square sm:min-h-[var(--cell-min-h,0px)] w-full items-center justify-center rounded-xl text-ink transition-colors focus-visible:outline-offset-[-2px] ${
+          selected ? 'bg-brand-soft ring-1 ring-inset ring-brand' : 'hover:bg-sunken'
         }`}
       >
         {svg ? (
-          <span className="glyph size-6" dangerouslySetInnerHTML={{ __html: svg }} />
+          <span
+            className={`glyph size-[min(var(--glyph-size,24px),40px)] transition-transform sm:size-[var(--glyph-size,24px)] duration-200 ${selected ? '-translate-y-[var(--glyph-lift,6px)]' : 'group-hover:-translate-y-[var(--glyph-lift,6px)] group-focus-visible:-translate-y-[var(--glyph-lift,6px)]'}`}
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
         ) : (
-          <span className="size-6 animate-pulse rounded-md bg-sunken" />
+          <span className="size-[min(var(--glyph-size,24px),40px)] animate-pulse rounded-md bg-sunken sm:size-[var(--glyph-size,24px)]" />
         )}
         <span
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-x-1 bottom-1.5 truncate text-center text-[11px] leading-4 text-muted transition-opacity ${
+          className={`pointer-events-none absolute inset-x-1 bottom-1.5 line-clamp-2 text-center text-[11px] leading-[14px] text-muted [overflow-wrap:anywhere] transition-opacity ${
             selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
           }`}
         >
@@ -116,7 +120,7 @@ export function IconGrid({ items, svgs, selected, onSelect, label }: Props) {
       aria-label={label}
       aria-describedby="grid-help"
       onKeyDown={onKeyDown}
-      className="grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-1 sm:grid-cols-[repeat(auto-fill,minmax(84px,1fr))]"
+      className="grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-1 sm:grid-cols-[repeat(auto-fill,minmax(max(96px,calc((100%-28px)/8)),1fr))]"
     >
       {items.map((item, index) => (
         <Cell
