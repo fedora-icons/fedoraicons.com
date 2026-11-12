@@ -7,8 +7,10 @@ export interface GridItem {
 interface Props {
   items: GridItem[];
   svgs: Record<string, string> | null;
-  selected: string | null;
-  onSelect: (name: string) => void;
+  /** Every selected icon (one for the inspector, several for a set). */
+  selected: ReadonlySet<string>;
+  /** `additive`: Shift/⌘/Ctrl was held, so toggle this icon in the set. */
+  onSelect: (name: string, additive: boolean) => void;
   label: string;
 }
 
@@ -19,7 +21,7 @@ const Cell = memo(function Cell({
   svg: string | undefined;
   selected: boolean;
   tabbable: boolean;
-  onSelect: (name: string) => void;
+  onSelect: (name: string, additive: boolean) => void;
   onFocusIndex: (index: number) => void;
   index: number;
 }) {
@@ -33,7 +35,15 @@ const Cell = memo(function Cell({
         aria-label={name}
         title={name.length > 22 ? name : undefined}
         aria-pressed={selected}
-        onClick={() => onSelect(name)}
+        onClick={(e) => onSelect(name, e.shiftKey || e.metaKey || e.ctrlKey)}
+        // Shift-click would otherwise extend a text selection across the grid.
+        onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+        onKeyDown={(e) => {
+          if (e.shiftKey && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onSelect(name, true);
+          }
+        }}
         onFocus={() => onFocusIndex(index)}
         className={`group relative flex aspect-square sm:min-h-[var(--cell-min-h,0px)] w-full items-center justify-center rounded-xl text-ink transition-colors focus-visible:outline-offset-[-2px] ${
           selected ? 'bg-brand-soft ring-1 ring-inset ring-brand' : 'hover:bg-sunken'
@@ -66,12 +76,14 @@ const Cell = memo(function Cell({
  */
 export function IconGrid({ items, svgs, selected, onSelect, label }: Props) {
   const listRef = useRef<HTMLUListElement>(null);
-  const selectedIndex = selected ? items.findIndex((i) => i.name === selected) : -1;
+  const selectedIndex = selected.size ? items.findIndex((i) => selected.has(i.name)) : -1;
   const [active, setActive] = useState(0);
   const activeIndex = selectedIndex >= 0 && active >= items.length ? selectedIndex : Math.min(active, Math.max(items.length - 1, 0));
 
+  // Follow the selection (e.g. from a shared URL), but never pull the roving
+  // focus away from the cell someone is working from inside the grid.
   useEffect(() => {
-    if (selectedIndex >= 0) setActive(selectedIndex);
+    if (selectedIndex >= 0 && !listRef.current?.contains(document.activeElement)) setActive(selectedIndex);
   }, [selectedIndex]);
 
   const columns = () => {
@@ -128,7 +140,7 @@ export function IconGrid({ items, svgs, selected, onSelect, label }: Props) {
           name={item.name}
           index={index}
           svg={svgs?.[item.name]}
-          selected={item.name === selected}
+          selected={selected.has(item.name)}
           tabbable={index === activeIndex}
           onSelect={onSelect}
           onFocusIndex={onFocusIndex}
@@ -142,6 +154,7 @@ export function GridHelp() {
   return (
     <p id="grid-help" className="sr-only">
       Use arrow keys to move between icons and Enter to open the inspector.
+      Shift plus Enter, or Shift-click, adds or removes an icon from a set you can download as a ZIP.
     </p>
   );
 }

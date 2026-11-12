@@ -43,7 +43,7 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 
 ## What the site does
 
-- **Catalog**: searches canonical names, aliases, tags, and categories; filters
+- **Catalog**: searches icon names, library paths, tags, and categories; filters
   by category; switches Regular, Solid (`filled`), Duocolor, Duotone, and
   Brands. Search, category, style, and selected icon are kept in the URL. The
   search field stays pinned while scrolling; `/` focuses it. The grid is one
@@ -54,13 +54,19 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   whole grid and carried into exports. Selecting an icon shows its inspector:
   previews, style, modifiers, the same controls, exports, and React usage. On
   mobile both open as a modal bottom sheet (native `<dialog>`).
-- **Size and stroke**: icons default to 64px. Stroke is **Auto** by default and
+- **Size and stroke**: icons default to 48px (Auto stroke 1.01px). Stroke is **Auto** by default and
   follows size, in 24px grid units: 1.25px at 24px, 0.85px at 64px, linear
   between and held at 0.85px above 64px. Moving the slider (0.5–2.5px) fixes a
   value until "Use auto". Every authored stroke is scaled by the same factor,
   so intentionally heavier strokes keep their proportions.
   Solid and brand artwork have no stroke control. `@fedora-icons/react` cannot
   change stroke weight, and the React panel says so.
+- **Icon sets**: Shift-click (or ⌘/Ctrl-click, or Shift+Enter) adds or removes
+  icons from a set. The pane then applies one size, stroke, and color to the
+  whole set and downloads it as a ZIP of SVGs or transparent PNGs (fflate,
+  loaded only when a ZIP is built). Esc or ✕ clears the set.
+- **Search tips**: the search field's ghost text rotates through these tricks
+  while it is empty and unfocused.
 - **Exports**: Download SVG, Download PNG (1×/2×/4×, transparent), Copy SVG,
   Copy image, Copy name, and a React example. Exports resolve every CSS variable
   and `currentColor` to concrete colors and preserve masks, clip paths, IDs,

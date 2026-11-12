@@ -55,7 +55,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.removeAttribute('open'); };
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); localStorage.clear(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe('Icons page', () => {
   it('shows the full catalog count from source data and loads only one style', async () => {
@@ -157,9 +157,9 @@ describe('Side pane (desktop)', () => {
     expect(within(pane).getByRole('heading', { name: 'Customize' })).toBeTruthy();
     await screen.findAllByRole('button', { name: 'search' });
     const grid = screen.getByRole('list', { name: 'Regular icons' }).parentElement!;
-    // Default: 64px with the automatic 0.85px stroke (0.85 / 1.25 = 0.68).
-    expect(grid.style.getPropertyValue('--glyph-size')).toBe('64px');
-    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.68');
+    // Default: 48px with the automatic 1.01px stroke (1.01 / 1.25 = 0.808).
+    expect(grid.style.getPropertyValue('--glyph-size')).toBe('48px');
+    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.808');
     expect(within(pane).getByText('Auto')).toBeTruthy();
 
     // Auto stroke follows the size.
@@ -177,8 +177,8 @@ describe('Side pane (desktop)', () => {
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.936');
 
     await user.click(within(pane).getByRole('button', { name: /Reset to defaults/ }));
-    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.68');
-    expect(grid.style.getPropertyValue('--glyph-size')).toBe('64px');
+    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.808');
+    expect(grid.style.getPropertyValue('--glyph-size')).toBe('48px');
   });
 
   it('has no stroke control for Solid', async () => {
@@ -216,5 +216,99 @@ describe('Side pane (desktop)', () => {
     const preview = await within(pane).findByRole('img', { name: /search, Regular, scaled preview/ });
     expect(preview.innerHTML).toContain('stroke-width="2"');
     expect(within(pane).getByText(/React package draws the standard 1.25px stroke/)).toBeTruthy();
+  });
+});
+
+describe('Multi-select and ZIP export (desktop)', () => {
+  beforeEach(useDesktop);
+
+  it('Shift-click builds a set from the open icon, and removing back to one reopens it', async () => {
+    const user = userEvent.setup();
+    renderAt('/?icon=search');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    await within(pane).findByRole('heading', { name: 'search', level: 2 });
+    const [user1] = await screen.findAllByRole('button', { name: 'user' });
+    await user.keyboard('{Shift>}');
+    await user.click(user1);
+    await user.keyboard('{/Shift}');
+
+    expect(within(pane).getByRole('heading', { name: '2 icons selected' })).toBeTruthy();
+    expect(location).toBe('');
+    const grid = screen.getByRole('list', { name: 'Regular icons' });
+    const pressed = within(grid).getAllByRole('button', { pressed: true }).map((b) => b.getAttribute('aria-label'));
+    expect(pressed.sort()).toEqual(['search', 'user']);
+
+    // The set's settings are the shared look.
+    expect(within(pane).getByRole('slider', { name: 'Stroke width' })).toBeTruthy();
+
+    await user.click(within(pane).getByRole('button', { name: 'Remove user from selection' }));
+    expect(location).toBe('?icon=search');
+    expect(within(pane).getByRole('heading', { name: 'search', level: 2 })).toBeTruthy();
+  });
+
+  it('Shift+Enter adds the focused icon from the keyboard', async () => {
+    const user = userEvent.setup();
+    renderAt('/?icon=search');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    const [cell] = await screen.findAllByRole('button', { name: 'user' });
+    cell.focus();
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    expect(within(pane).getByRole('heading', { name: '2 icons selected' })).toBeTruthy();
+  });
+
+  it('downloads the set as a ZIP of SVGs that use the shared look', async () => {
+    const user = userEvent.setup();
+    let blob: Blob | null = null;
+    vi.stubGlobal('URL', Object.assign(URL, {
+      createObjectURL: (b: Blob) => { blob = b; return 'blob:test'; },
+      revokeObjectURL: () => {},
+    }));
+    // jsdom cannot follow the download link; the blob above is what matters.
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderAt('/?icon=search');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    const [userCell] = await screen.findAllByRole('button', { name: 'user' });
+    await user.keyboard('{Shift>}');
+    await user.click(userCell);
+    await user.keyboard('{/Shift}');
+
+    fireEvent.change(within(pane).getByRole('slider', { name: 'Stroke width' }), { target: { value: '2' } });
+    await user.click(within(pane).getByRole('button', { name: '32' }));
+    await user.click(within(pane).getByRole('button', { name: 'Download 2 icons (.zip)' }));
+    await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/);
+
+    const { unzipSync, strFromU8 } = await import('fflate');
+    const bytes = await new Promise<ArrayBuffer>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.readAsArrayBuffer(blob!);
+    });
+    const files = unzipSync(new Uint8Array(bytes));
+    expect(Object.keys(files).sort()).toEqual(['search-regular.svg', 'user-regular.svg']);
+    for (const bytes of Object.values(files)) {
+      const svg = strFromU8(bytes);
+      expect(svg).toContain('width="32"');
+      expect(svg).toContain('stroke-width="2"');
+      expect(svg).not.toContain('currentColor');
+    }
+  });
+});
+
+describe('Search tips', () => {
+  it('rotate through tricks while idle and pause while the field is focused', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      renderAt('/');
+      const tip = () => screen.getByTestId('search-tip').textContent;
+      expect(tip()).toMatch(/^Search 1,252 icons/);
+      await act(async () => { vi.advanceTimersByTime(4500); });
+      expect(tip()).toMatch(/^Tip: /);
+      const shown = tip();
+      act(() => screen.getByRole('searchbox', { name: 'Search icons' }).focus());
+      await act(async () => { vi.advanceTimersByTime(9000); });
+      expect(tip()).toBe(shown);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

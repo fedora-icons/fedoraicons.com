@@ -240,6 +240,7 @@ export function Inspector({
             </Button>
           </div>
           <p className="text-xs text-faint">PNGs have transparent backgrounds. Copy image uses the selected PNG scale.</p>
+          <p className="text-xs text-faint">Shift-click more icons in the grid to download several as a ZIP.</p>
         </div>
       </Section>
 

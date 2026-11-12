@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CustomizePanel } from '../components/Customize';
 import { GridHelp, IconGrid } from '../components/IconGrid';
 import { Inspector, SidePane } from '../components/Inspector';
+import { SelectionPanel } from '../components/SelectionPanel';
 import { Button, Segmented, UiIcon } from '../components/ui';
 import { brandCategories, brandEntries, brands, hasBrandStyle, loadBrands } from '../lib/brands';
 import { catalog, iconsByName, loadStyle, STYLE_META, type StyleId } from '../lib/catalog';
@@ -30,6 +31,23 @@ const VIEW_OPTIONS: { value: View; label: string; title?: string }[] = [
 const nf = new Intl.NumberFormat('en-US');
 const COLLAPSE_KEY = 'fedora-pane-collapsed';
 
+/** Search ghost text: the prompt first, then rotating tips for every trick. */
+const DESKTOP_TIPS = [
+  `Search ${nf.format(catalog.icons.length)} icons by name or category`,
+  'Tip: Shift-click icons to select several, then download them as a ZIP',
+  'Tip: press / anywhere to jump to search',
+  'Tip: arrow keys move through the grid, Enter opens an icon',
+  'Tip: size, stroke, and color in the right pane apply to every icon',
+  'Tip: Esc clears the search, or closes the selected icon',
+  'Tip: copy the page URL to share your search, style, and icon',
+];
+const MOBILE_TIPS = [
+  `Search ${nf.format(catalog.icons.length)} icons`,
+  'Tip: tap Customize for size, stroke, and color',
+  'Tip: choose a category to narrow the grid',
+  'Tip: share the URL to share your search and style',
+];
+
 /** Focus the search box with "/" unless the user is typing somewhere. */
 export function useSlashToFocus(ref: React.RefObject<HTMLInputElement | null>) {
   useEffect(() => {
@@ -47,9 +65,29 @@ export function useSlashToFocus(ref: React.RefObject<HTMLInputElement | null>) {
   }, [ref]);
 }
 
+const TIP_INTERVAL_MS = 4500;
+
+/**
+ * Ghost text that rotates through tips while the field is empty and not
+ * focused. The first entry is the plain search prompt. Tips are visual
+ * hints only; the field's accessible name comes from `label`.
+ */
+function useRotatingTip(tips: string[], paused: boolean) {
+  const [index, setIndex] = useState(0);
+  const count = tips.length;
+  useEffect(() => {
+    if (paused || count < 2) return;
+    const id = window.setInterval(() => setIndex((i) => (i + 1) % count), TIP_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [paused, count]);
+  return { tip: tips[index % Math.max(count, 1)] ?? '', index };
+}
+
 export function SearchField({
-  value, onChange, inputRef, placeholder, label,
-}: { value: string; onChange: (v: string) => void; inputRef: React.RefObject<HTMLInputElement | null>; placeholder: string; label: string }) {
+  value, onChange, inputRef, tips, label,
+}: { value: string; onChange: (v: string) => void; inputRef: React.RefObject<HTMLInputElement | null>; tips: string[]; label: string }) {
+  const [focused, setFocused] = useState(false);
+  const { tip, index } = useRotatingTip(tips, focused || !!value);
   return (
     <div className="relative">
       <UiIcon name="search" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-faint" />
@@ -57,14 +95,25 @@ export function SearchField({
         ref={inputRef}
         type="search"
         aria-label={label}
-        placeholder={placeholder}
         value={value}
         autoComplete="off"
         spellCheck={false}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onKeyDown={(e) => { if (e.key === 'Escape' && value) { e.preventDefault(); onChange(''); } }}
-        className="h-12 w-full rounded-2xl border border-line-strong bg-surface pl-12 pr-24 text-base text-ink shadow-[0_1px_2px_rgb(0_0_0/0.04)] outline-none transition placeholder:text-faint focus:border-brand focus:ring-4 focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden"
+        className="h-12 w-full rounded-2xl border border-line-strong bg-surface pl-12 pr-24 text-base text-ink shadow-[0_1px_2px_rgb(0_0_0/0.04)] outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden"
       />
+      {!value && (
+        <span
+          key={index}
+          aria-hidden="true"
+          data-testid="search-tip"
+          className="search-tip pointer-events-none absolute inset-y-0 left-12 right-24 flex items-center truncate text-base text-faint"
+        >
+          <span className="truncate">{tip}</span>
+        </span>
+      )}
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
         {value ? (
           <button type="button" aria-label="Clear search" onClick={() => { onChange(''); inputRef.current?.focus(); }} className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-sunken hover:text-ink">
@@ -111,6 +160,8 @@ export function IconsPage() {
   const [look, setLook] = useState<Look>(DEFAULT_LOOK);
   const [collapsed, setCollapsedState] = useState(readCollapsed);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  /** Two or more icons picked with Shift/⌘/Ctrl-click: a set to customize and download together. */
+  const [multi, setMulti] = useState<string[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const desktop = useMediaQuery('(min-width: 1024px)');
   const paneHost = usePaneHost();
@@ -160,10 +211,42 @@ export function IconsPage() {
     [styleSvgs],
   );
 
-  // Selecting an icon always reveals the pane.
+  const multiActive = multi.length >= 2;
+  const selectedSet = useMemo(
+    () => new Set(multiActive ? multi : state.icon ? [state.icon] : []),
+    [multiActive, multi, state.icon],
+  );
+
+  // A single icon chosen any other way (Back, a link, the modifier menu) ends a set.
   useEffect(() => {
-    if (selected && collapsed && desktop) setCollapsed(false);
-  }, [selected, collapsed, desktop, setCollapsed]);
+    if (state.icon) setMulti([]);
+  }, [state.icon]);
+
+  // Selecting always reveals the pane.
+  useEffect(() => {
+    if ((selected || multiActive) && collapsed && desktop) setCollapsed(false);
+  }, [selected, multiActive, collapsed, desktop, setCollapsed]);
+
+  /**
+   * Plain click opens one icon (or closes it again). Shift/⌘/Ctrl-click
+   * toggles an icon in the set; the set starts from the open icon.
+   */
+  const select = useCallback((name: string, additive: boolean) => {
+    if (!additive) {
+      setMulti([]);
+      update({ icon: !multiActive && name === state.icon ? null : name });
+      return;
+    }
+    const base = multiActive ? multi : state.icon ? [state.icon] : [];
+    const next = base.includes(name) ? base.filter((n) => n !== name) : [...base, name];
+    if (next.length >= 2) {
+      setMulti(next);
+      if (state.icon) update({ icon: null });
+    } else {
+      setMulti([]);
+      update({ icon: next[0] ?? null });
+    }
+  }, [multi, multiActive, state.icon, update]);
 
   const close = useCallback(() => {
     const name = state.icon;
@@ -194,7 +277,7 @@ export function IconsPage() {
         <SearchField
           inputRef={searchRef}
           label={brandsView ? 'Search brands' : 'Search icons'}
-          placeholder={brandsView ? 'Search brands' : desktop ? `Search ${nf.format(total)} icons by name, synonym, or category` : `Search ${nf.format(total)} icons`}
+          tips={brandsView ? ['Search brands'] : desktop ? DESKTOP_TIPS : MOBILE_TIPS}
           value={state.q}
           onChange={(q) => update({ q }, true)}
         />
@@ -205,10 +288,15 @@ export function IconsPage() {
           fill
           label="Icon style"
           value={state.style}
-          onChange={(style) => update(
+          onChange={(style) => {
+            if ((style === 'brands') === brandsView) {
+              update({ style });
+              return;
+            }
             // Core icons and brands are different catalogs: drop what does not carry over.
-            (style === 'brands') === brandsView ? { style } : { style, category: null, icon: null },
-          )}
+            setMulti([]);
+            update({ style, category: null, icon: null });
+          }}
           options={VIEW_OPTIONS}
         />
         {brandsView && brandEntries.length > 0 && (
@@ -220,28 +308,30 @@ export function IconsPage() {
           />
         )}
         {(!brandsView || brandEntries.length > 0) && (
-          <div className="relative">
-            <label htmlFor="category" className="sr-only">Category</label>
-            <select
-              id="category"
-              value={state.category ?? ''}
-              onChange={(e) => update({ category: e.target.value || null })}
-              className="h-9 appearance-none rounded-lg border border-line-strong bg-surface pl-3 pr-9 text-sm font-medium text-ink"
-            >
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
-              ))}
-            </select>
-            <UiIcon name="chevron-down" className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
-          </div>
+          <p className="text-sm text-muted" aria-live="polite" aria-atomic="true">{summary}</p>
         )}
-        {!desktop && (
-          <Button icon="settings-sliders" onClick={() => setCustomizeOpen(true)}>Customize</Button>
-        )}
-        {(!brandsView || brandEntries.length > 0) && (
-          <p className="ml-auto text-sm text-muted" aria-live="polite" aria-atomic="true">{summary}</p>
-        )}
+        <div className="ml-auto flex items-center gap-3">
+          {!desktop && (
+            <Button icon="settings-sliders" onClick={() => setCustomizeOpen(true)}>Customize</Button>
+          )}
+          {(!brandsView || brandEntries.length > 0) && (
+            <div className="relative">
+              <label htmlFor="category" className="sr-only">Category</label>
+              <select
+                id="category"
+                value={state.category ?? ''}
+                onChange={(e) => update({ category: e.target.value || null })}
+                className="h-9 appearance-none rounded-lg border border-line-strong bg-surface pl-3 pr-9 text-sm font-medium text-ink"
+              >
+                <option value="">All categories</option>
+                {categories.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
+                ))}
+              </select>
+              <UiIcon name="chevron-down" className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
+            </div>
+          )}
+        </div>
       </div>
 
       {brandsView && (
@@ -266,15 +356,15 @@ export function IconsPage() {
               label={brandsView ? 'Brand icons' : `${STYLE_META[drawStyle].label} icons`}
               items={results}
               svgs={gridSvgs}
-              selected={state.icon}
-              onSelect={(icon) => update({ icon: icon === state.icon ? null : icon })}
+              selected={selectedSet}
+              onSelect={select}
             />
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-line-strong px-6 py-14 text-center">
             <h2 className="text-lg font-semibold">No {noun[1]} match “{state.q.trim()}”{state.category ? ` in ${state.category}` : ''}</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-              Try a broader word or a synonym — search covers names, aliases, tags, and categories.
+              Try a broader or different word — search covers icon names, their library paths, and categories.
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {elsewhere > 0 && (
@@ -298,12 +388,24 @@ export function IconsPage() {
         host={paneHost}
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
-        sheetOpen={!!selected || customizeOpen}
-        onDismiss={() => (selected ? close() : setCustomizeOpen(false))}
+        sheetOpen={multiActive || !!selected || customizeOpen}
+        onDismiss={() => (multiActive ? setMulti([]) : selected ? close() : setCustomizeOpen(false))}
         headingId="pane-heading"
         focusKey={selected?.name ?? null}
       >
-        {selected ? (
+        {multiActive ? (
+          <SelectionPanel
+            names={multi}
+            style={drawStyle}
+            kind={kind}
+            svgs={styleSvgs}
+            look={look}
+            onLookChange={changeLook}
+            onRemove={(name) => select(name, true)}
+            onClear={() => setMulti([])}
+            headingId="pane-heading"
+          />
+        ) : selected ? (
           <Inspector
             key={`${kind}:${selected.name}`}
             kind={kind}

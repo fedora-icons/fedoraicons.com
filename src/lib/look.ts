@@ -1,5 +1,5 @@
 import { palettes, type StyleId } from './catalog';
-import { BASE_STROKE, isDuo } from './svg';
+import { BASE_STROKE, hasModifierRole, hasSecondaryRole, isDuo, type SvgColorOptions } from './svg';
 
 /**
  * How icons are drawn across the grid, the side pane previews, and exports.
@@ -16,7 +16,7 @@ export interface Look {
 }
 
 export const DEFAULT_LOOK: Look = {
-  size: 64,
+  size: 48,
   strokeWidth: null,
   mono: null,
   paletteName: palettes.defaultPalette,
@@ -92,4 +92,26 @@ export function gridVars(look: Look, style: StyleId, theme: 'light' | 'dark', ki
     vars.color = look.mono;
   }
   return vars;
+}
+
+/**
+ * Concrete export colors for one icon under this look. Secondary is only
+ * applied where the artwork has that role; modifier glyphs keep the
+ * library default unless an override is given.
+ */
+export function exportColors(
+  source: string,
+  style: StyleId,
+  look: Look,
+  theme: 'light' | 'dark',
+  modifierOverride?: string | null,
+): SvgColorOptions {
+  const r = resolveLook(look, theme);
+  const duo = isDuo(style);
+  const modifierDefault = source.match(/var\(--fedora-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase();
+  return {
+    primary: duo ? r.duo.primary : r.mono,
+    secondary: duo && hasSecondaryRole(source) ? r.duo.secondary : undefined,
+    modifier: hasModifierRole(source) ? (modifierOverride ?? modifierDefault ?? undefined) : undefined,
+  };
 }
