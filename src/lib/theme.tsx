@@ -24,7 +24,7 @@ const ThemeContext = createContext<ThemeValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPref] = useState<ThemePreference>(readPreference);
-  const [systemDark, setSystemDark] = useState(() => media().matches);
+  const [systemDark, setSystemDark] = useState(() => typeof window !== 'undefined' && media().matches);
 
   useEffect(() => {
     const query = media();
@@ -60,7 +60,7 @@ export function useTheme() {
 }
 
 export function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
   useEffect(() => {
     const list = window.matchMedia(query);
     const onChange = () => setMatches(list.matches);

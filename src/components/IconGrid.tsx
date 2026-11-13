@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 
 export interface GridItem {
   name: string;
@@ -12,7 +12,14 @@ interface Props {
   /** `additive`: Shift/⌘/Ctrl was held, so toggle this icon in the set. */
   onSelect: (name: string, additive: boolean) => void;
   label: string;
+  /** Called with icons near the viewport, so their artwork can load lazily. */
+  onNeed?: (names: string[]) => void;
 }
+
+/** Cells rendered into the static HTML: enough for a first screen, without shipping the whole grid. */
+const PRERENDER_CELLS = 96;
+/** Load artwork this far ahead of the viewport. */
+const NEED_MARGIN = '900px 0px';
 
 const Cell = memo(function Cell({
   name, svg, selected, tabbable, onSelect, onFocusIndex, index,
@@ -26,7 +33,7 @@ const Cell = memo(function Cell({
   index: number;
 }) {
   return (
-    <li className="icon-cell">
+    <li className="icon-cell" data-name={name} style={{ '--i': Math.min(index, 40) } as CSSProperties}>
       <button
         type="button"
         data-icon={name}
@@ -74,8 +81,30 @@ const Cell = memo(function Cell({
  * Dense, keyboard-navigable icon grid. The grid is one tab stop; arrow keys,
  * Home/End, and PageUp/PageDown move between icons; Enter/Space opens one.
  */
-export function IconGrid({ items, svgs, selected, onSelect, label }: Props) {
+export function IconGrid({ items: allItems, svgs, selected, onSelect, label, onNeed }: Props) {
+  const items = typeof window === 'undefined' ? allItems.slice(0, PRERENDER_CELLS) : allItems;
   const listRef = useRef<HTMLUListElement>(null);
+
+  // Ask for artwork as cells approach the viewport; batch each frame's worth.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!onNeed || !list || typeof IntersectionObserver === 'undefined') return;
+    let pending: string[] = [];
+    let frame = 0;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const name = (entry.target as HTMLElement).dataset.name;
+        if (name) pending.push(name);
+        observer.unobserve(entry.target);
+      }
+      if (pending.length && !frame) {
+        frame = requestAnimationFrame(() => { frame = 0; const names = pending; pending = []; onNeed(names); });
+      }
+    }, { rootMargin: NEED_MARGIN });
+    for (const cell of Array.from(list.children)) observer.observe(cell);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [items, onNeed]);
   const selectedIndex = selected.size ? items.findIndex((i) => selected.has(i.name)) : -1;
   const [active, setActive] = useState(0);
   const activeIndex = selectedIndex >= 0 && active >= items.length ? selectedIndex : Math.min(active, Math.max(items.length - 1, 0));

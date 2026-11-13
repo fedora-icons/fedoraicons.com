@@ -102,8 +102,24 @@ describe('Icons page', () => {
 
   it('shows a useful empty state', async () => {
     renderAt('/?q=zzzznothing');
-    expect(screen.getByRole('heading', { name: /No icons match/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Clear search and filters' })).toBeTruthy();
+    const empty = within(screen.getByRole('region', { name: 'No icons for “zzzznothing”' }));
+    expect(empty.getByRole('button', { name: 'Clear search' })).toBeTruthy();
+    const request = empty.getByRole('link', { name: /Request this icon/ });
+    expect(request.getAttribute('href')).toBe('https://github.com/fedora-icons/fedora-icons/issues/new?title=Icon+request%3A+zzzznothing');
+  });
+
+  it('suggests close matches for a typo and searches them in one click', async () => {
+    const user = userEvent.setup();
+    renderAt('/?q=calender');
+    const suggestions = within(screen.getByRole('heading', { name: 'Did you mean' }).parentElement!);
+    const calendar = suggestions.getByRole('button', { name: 'calendar' });
+    await user.click(calendar);
+    expect(location).toBe('?q=calendar');
+  });
+
+  it('offers the other catalog when only it has matches', () => {
+    renderAt('/?q=spotify');
+    expect(screen.getByRole('button', { name: 'Show 1 in Brands' })).toBeTruthy();
   });
 
   it('restores style, category, and the selected icon from a shared URL', async () => {
@@ -380,7 +396,8 @@ describe('Multi-select and ZIP export (desktop)', () => {
     fireEvent.change(within(pane).getByRole('slider', { name: 'Stroke width' }), { target: { value: '2' } });
     fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '32' } });
     await user.click(within(pane).getByRole('button', { name: 'Download 2 icons (.zip)' }));
-    await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/);
+    // Building the ZIP is slow on CI runners; allow more than the 1s default.
+    await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/, undefined, { timeout: 8000 });
 
     const { unzipSync, strFromU8 } = await import('fflate');
     const bytes = await new Promise<ArrayBuffer>((resolve) => {

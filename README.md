@@ -108,18 +108,63 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   licensing, privacy (no cookies or tracking; the two local-storage
   preferences, named), and source revision. The footer links to Privacy. The side nav marks the section being read,
   and in-page links scroll smoothly (instantly with reduced motion).
+- **No results**: says what was searched, suggests close matches (typos and
+  partial words, with previews), offers the same search in all categories or
+  in the other catalog (icons or Brands), and links to a pre-filled icon
+  request on GitHub.
+- **404**: a page of its own with search, popular categories, and links
+  back in; marked `noindex`.
+- **Motion**: the page eases in on first paint, icons settle into place as
+  a search or filter changes the grid, and artwork fades in as it loads.
+  All of it is off with reduced motion.
+
+## Search, sharing, and AI answers
+
+- Every page is **prerendered** at build time (`src/entry-server.tsx`, run by
+  `scripts/postbuild.mjs`), so crawlers that don't run JavaScript read the
+  real content. The home grid prerenders its first screen only.
+- Titles, descriptions, canonical links, Open Graph and X/Twitter share
+  tags, and JSON-LD (WebSite with search, Organization, the library as
+  SoftwareSourceCode, TechArticle for Docs, breadcrumbs) come from
+  `src/lib/seo.ts`, with counts from the catalog. The app keeps the title
+  and description current while you navigate.
+- The build also writes `sitemap.xml`, `robots.txt` (everything allowed,
+  AI crawlers included), and `llms.txt` (a plain summary for AI assistants).
+- Share image `public/og-image.png` (1200×630) and the app icons in
+  `public/app/` are rendered from real library artwork and the mark by
+  `node scripts/brand-images.mjs` (needs Chrome). Re-run it when the mark or
+  showcase icons change.
+- `SITE_URL` in `src/lib/seo.ts` is `https://fedoraicons.com`. Canonical
+  links have no trailing slash (`/docs`), so the host should serve
+  `docs/index.html` at `/docs` without redirecting.
+
+## Speed and offline
+
+- Icon artwork loads in 96-icon chunks (`public/icons/<style>/<n>.json`) as
+  cells approach the viewport; the first chunk is preloaded with the page.
+  Off-screen cells skip rendering (`content-visibility`).
+- The two Latin text fonts are preloaded. The catalog ships as JSON.parse
+  data; highlight.js and the ZIP library load on demand.
+- **Installable (PWA)**: `manifest.webmanifest` (generated) and
+  `public/sw.js`. Pages are network-first with an offline fallback; hashed
+  assets are cache-first; artwork is served from cache and refreshed in the
+  background. Caches are versioned by library revision and build.
 
 ## Layout
 
 ```
 scripts/sync-icons.mjs    verified library -> data snapshot
-scripts/postbuild.mjs     static route entry points + 404.html
-public/icons/<style>.json one lazily fetched SVG map per style (generated)
+scripts/postbuild.mjs     prerendered pages, 404.html, sitemap, robots, llms.txt, manifest
+scripts/brand-images.mjs  share image and app icons (headless Chrome)
+public/icons/<style>.json whole-style SVG maps for downloads (generated)
+public/icons/<style>/     96-icon chunks the grid loads lazily (generated)
+public/sw.js              service worker (offline, repeat-visit speed)
 src/data/*.json           catalog, palettes, UI glyphs, source lock (generated), brands (generated)
 src/brand/                Fedora Icons mark (from Figma; see its README)
 src/lib/                  svg export, search, URL state, look (customization), brands, React snippet, theme
 src/components/           layout, grid, side pane + inspector, customize controls, UI primitives
-src/pages/                Icons (core styles and Brands), Docs
+src/pages/                Icons (core styles and Brands), Docs, Pricing, 404
+src/entry-server.tsx      build-time prerender entry
 tests/                    Vitest suites
 ```
 

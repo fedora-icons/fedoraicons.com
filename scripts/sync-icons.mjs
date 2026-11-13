@@ -24,7 +24,8 @@ export const UI_ICONS = [
   'check', 'info-circle', 'chevron-down', 'link', 'link-external', 'menu',
   'book-open', 'palette', 'arrow-left', 'filter', 'x-circle',
   'layout-sidebar-right', 'settings-sliders', 'undo', 'message-smile-square',
-  'plus', 'minus', 'dots-horizontal',
+  'plus', 'minus', 'dots-horizontal', 'compass', 'binoculars', 'map', 'route', 'home',
+  'sparkles', 'lightbulb', 'arrow-right', 'search-sparkles',
 ];
 
 /** Brand names and search aliases where the file path alone isn't the familiar name. */
@@ -35,6 +36,9 @@ const BRAND_META = {
   'microsoft/windows.svg': { name: 'windows', aliases: ['microsoft-windows'] },
   'social/x.svg': { aliases: ['twitter'] },
 };
+
+/** Icons per artwork chunk. Must match ICON_CHUNK in src/lib/catalog.ts. */
+export const ICON_CHUNK = 96;
 
 const sha256 = (data) => createHash('sha256').update(data).digest('hex');
 const json = (value) => JSON.stringify(value, null, 2) + '\n';
@@ -103,6 +107,14 @@ export function buildOutputs(source) {
     const body = JSON.stringify(map);
     snapshotDigests[style] = sha256(body);
     outputs[`public/icons/${style}.json`] = body;
+    // The grid loads artwork in small chunks as icons scroll into view
+    // (catalog order, ICON_CHUNK icons each); the whole-style file above
+    // serves downloads and browsers without IntersectionObserver.
+    const names = Object.keys(map);
+    for (let n = 0; n * ICON_CHUNK < names.length; n += 1) {
+      const chunk = Object.fromEntries(names.slice(n * ICON_CHUNK, (n + 1) * ICON_CHUNK).map((name) => [name, map[name]]));
+      outputs[`public/icons/${style}/${n}.json`] = JSON.stringify(chunk);
+    }
   }
 
   // Normalize the two composition shapes found in the manifest into a list.

@@ -61,3 +61,47 @@ export function search(index: Indexed[], query: string, category?: string | null
     .sort((a, b) => b.score - a.score || a.icon.name.localeCompare(b.icon.name))
     .map((s) => s.icon);
 }
+
+/** Edit distance, stopping early once it exceeds `max`. */
+function distance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, row[j]);
+    }
+    if (best > max) return max + 1;
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+/**
+ * Close matches for a search with no results: icons matching some of the
+ * words, or a word spelled a little differently (typos). Best first.
+ */
+export function suggest(index: Indexed[], query: string, limit = 8): IconEntry[] {
+  const terms = normalize(query).split(' ').filter(Boolean);
+  if (!terms.length) return [];
+  const scored: { icon: IconEntry; score: number }[] = [];
+  for (const entry of index) {
+    const words = entry.nameWords.split(' ');
+    let score = 0;
+    for (const term of terms) {
+      const exact = scoreTerm(entry, term);
+      if (exact) { score += exact; continue; }
+      if (term.length < 3) continue;
+      const max = term.length >= 8 ? 2 : 1;
+      const d = Math.min(...words.map((w) => distance(term, w, max)));
+      if (d <= max) score += 30 - d * 8;
+    }
+    if (score > 0) scored.push({ icon: entry.icon, score });
+  }
+  return scored
+    .sort((a, b) => b.score - a.score || a.icon.name.length - b.icon.name.length || a.icon.name.localeCompare(b.icon.name))
+    .slice(0, limit)
+    .map((s) => s.icon);
+}
