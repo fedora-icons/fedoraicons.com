@@ -43,7 +43,8 @@ const en = {
   'footer.privacy': 'Privacy',
   'footer.github': 'GitHub',
   'footer.license': 'License',
-  'footer.builtBy': 'Built by <link>Joel</link>',
+  'footer.npm': 'npm',
+  'footer.elsewhere': 'Fedora Icons elsewhere',
   'footer.language': 'Language',
 
   // Theme

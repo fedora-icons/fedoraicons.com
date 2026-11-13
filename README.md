@@ -105,7 +105,7 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 - **Code samples**: dark in both themes, with syntax colors (highlight.js
   core with TSX, HTML, CSS, and shell, loaded on demand). Shell samples are
   shown as a terminal.
-- **Docs** (in the header; the footer links Privacy, License, and GitHub, and credits the author): SVG, React, Figma, colors, sizes, modifiers, accessibility,
+- **Docs** (in the header; the footer links Privacy and License, then GitHub | npm): SVG, React, Figma, colors, sizes, modifiers, accessibility,
   licensing, privacy (no cookies or tracking; the three local-storage
   preferences, named), and source revision. The side nav marks the section being read,
   and in-page links scroll smoothly (instantly with reduced motion).
