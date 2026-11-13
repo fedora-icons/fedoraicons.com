@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { prerenderToNodeStream } from 'react-dom/static';
-import { StaticRouter } from 'react-router';
+import { StaticRouter } from 'react-router-dom';
 import { AppShell } from './App';
 import { createI18n, DEFAULT_LOCALE, loadMessages } from './i18n';
 

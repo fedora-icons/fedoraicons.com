@@ -7,8 +7,8 @@ The website consumes `fedora-icons/fedora-icons` as read-only input.
 
 ```sh
 git -C ../fedora-icons pull          # or check out the revision you want
-npm run sync -- --source ../fedora-icons
-npm test
+pnpm run sync --source ../fedora-icons
+pnpm test
 git diff --stat src/data public/icons
 ```
 
@@ -33,7 +33,7 @@ Commit the regenerated files together with `src/data/source-lock.json`.
 | `public/licenses/fedora-icons-LICENSE.txt` | the library's MIT license |
 | `src/data/source-lock.json` | repository, git revision, whether the checkout had local changes, manifest and snapshot SHA-256 |
 
-`npm run sync:check` regenerates in memory and fails if anything differs from
+`pnpm run sync:check` regenerates in memory and fails if anything differs from
 the committed files. CI runs it against the revision recorded in the lock.
 
 Counts, categories, and names in the UI always come from these files. Nothing
@@ -44,7 +44,7 @@ is hard-coded.
 Brand marks come from the library's `brand-assets/`, not from this repo. The
 library records each mark's owner, official source, SHA-256 digest, retrieval
 date, and shared rights notes in `brand-assets/manifest.json`; see its
-`BRANDS.md`. `npm run sync` verifies every digest, copies each SVG unmodified to
+`BRANDS.md`. `pnpm run sync` verifies every digest, copies each SVG unmodified to
 `public/brands/<name>-regular.svg`, and generates `src/data/brands.json`. Do not
 edit either by hand.
 

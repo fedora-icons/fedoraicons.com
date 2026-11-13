@@ -21,24 +21,25 @@ synchronized library. The site builds to static files.
 
 ## Development
 
-Node.js 20 or later.
+Node.js 24 (`.nvmrc`) and pnpm (the version is pinned in `package.json`;
+run `corepack enable` once, or install pnpm globally).
 
 ```sh
-npm ci
-npm run dev          # http://localhost:5173
+pnpm install
+pnpm run dev          # http://localhost:5173
 ```
 
 | Script | Purpose |
 | --- | --- |
-| `npm run sync -- --source ../fedora-icons` | Re-synchronize data from a library checkout |
-| `npm run sync:check` | Fail if committed data differs from the library checkout |
-| `npm run typecheck` | TypeScript project build (no emit) |
-| `npm run lint` | ESLint |
-| `npm test` | Vitest: search, URL state, export fidelity, sync integrity, page behavior |
-| `npm run build` | Type check, production build to `dist/`, route entry points |
-| `npm run check` | All of the above, in order |
+| `pnpm run sync --source ../fedora-icons` | Re-synchronize data from a library checkout |
+| `pnpm run sync:check` | Fail if committed data differs from the library checkout |
+| `pnpm run typecheck` | TypeScript project build (no emit) |
+| `pnpm run lint` | ESLint |
+| `pnpm test` | Vitest: search, URL state, export fidelity, sync integrity, page behavior |
+| `pnpm run build` | Type check, production build to `dist/`, route entry points |
+| `pnpm run check` | All of the above, in order |
 
-`sync:check` and `npm run check` look for the library at `../fedora-icons`
+`sync:check` and `pnpm run check` look for the library at `../fedora-icons`
 by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 
 ## What the site does
@@ -146,7 +147,7 @@ The site is built for several languages; it ships in English today.
 - **Add a language**: add it to `LOCALES` in `src/i18n/config.ts`, then
   create `src/i18n/messages/<code>.ts` translating keys from
   `src/i18n/messages/en.ts`. Keys you leave out fall back to English, and
-  `npm test` reports how many remain. Right-to-left languages set
+  `pnpm test` reports how many remain. Right-to-left languages set
   `dir: 'rtl'`.
 - **URLs**: English stays at `/`; other languages live under `/<code>/`
   (`/fr/docs`). Search, filters, and the selected icon are query strings,

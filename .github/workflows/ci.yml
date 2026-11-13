@@ -19,12 +19,16 @@ jobs:
           repository: fedora-icons/fedora-icons
           ref: ${{ steps.lock.outputs.rev }}
           path: fedora-icons
+      # pnpm's version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: fedoraicons.com/package.json
       - uses: actions/setup-node@v4
         with:
           node-version-file: fedoraicons.com/.nvmrc
-          cache: npm
-          cache-dependency-path: fedoraicons.com/package-lock.json
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: fedoraicons.com/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
         working-directory: fedoraicons.com
-      - run: npm run check
+      - run: pnpm run check
         working-directory: fedoraicons.com
