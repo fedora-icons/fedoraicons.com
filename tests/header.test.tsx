@@ -8,7 +8,6 @@ import { Layout } from '../src/components/Layout';
 import { ToastProvider } from '../src/components/ui';
 import { catalog, lock, resetStyleCache } from '../src/lib/catalog';
 import { ThemeProvider } from '../src/lib/theme';
-import PricingPage from '../src/pages/PricingPage';
 import { styleSvgs } from './helpers';
 
 const license = readFileSync(join(__dirname, '../public/licenses/fedora-icons-LICENSE.txt'), 'utf8');
@@ -26,7 +25,7 @@ function renderAt(url: string) {
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<p>Home</p>} />
-              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/docs" element={<h1>Documentation</h1>} />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -48,15 +47,14 @@ describe('Header actions', () => {
     const figma = within(nav).getByRole('link', { name: /^Figma/ });
     expect(figma.getAttribute('href')).toMatch(/^https:\/\/www\.figma\.com\/design\/5zcUV9E4Bu8FSssDfhyOWw\//);
     expect(figma.getAttribute('target')).toBe('_blank');
-    expect(within(nav).getByRole('link', { name: 'Pricing' }).getAttribute('href')).toBe('/pricing');
+    expect(within(nav).queryByRole('link', { name: /Pricing/ })).toBeNull();
   });
 
-  it('Pricing shows a placeholder with no invented plans', async () => {
+  it('opens Docs from the header', async () => {
     const user = userEvent.setup();
     renderAt('/');
-    await user.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Pricing' }));
-    expect(await screen.findByRole('heading', { name: 'Pricing is coming soon.' })).toBeTruthy();
-    expect(document.body.textContent).not.toMatch(/\$\d/);
+    await user.click(within(screen.getAllByRole('navigation', { name: 'Main' })[0]).getByRole('link', { name: 'Docs' }));
+    expect(await screen.findByRole('heading', { name: 'Documentation' })).toBeTruthy();
   });
 
   it('Download builds a ZIP of every core icon in every style, plus the license', async () => {

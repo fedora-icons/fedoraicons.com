@@ -6,3 +6,7 @@ if (!window.matchMedia) {
     addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false,
   }) as MediaQueryList;
 }
+
+// Page tests reach any cell right away; tests/icon-grid.test.tsx covers progressive mounting.
+import { setProgressiveGrid } from '../src/components/IconGrid';
+setProgressiveGrid(false);

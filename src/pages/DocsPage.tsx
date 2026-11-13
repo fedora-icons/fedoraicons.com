@@ -256,10 +256,11 @@ export default function DocsPage() {
 
         <Section id="privacy" title="Privacy">
           <p>This site sets no cookies and runs no analytics, ads, or tracking scripts. Fonts and icons are served from this site, not from third parties.</p>
-          <p>Your browser&apos;s local storage keeps two preferences, and only on your device:</p>
+          <p>Your browser&apos;s local storage keeps three preferences, and only on your device:</p>
           <ul className="list-disc space-y-1 pl-5">
             <li><code>fedora-theme</code>: light or dark, when you pick one instead of following your system.</li>
             <li><code>fedora-pane-collapsed</code>: whether the side pane is collapsed.</li>
+            <li><code>fedora-pane-width</code>: the side pane&apos;s width, when you resize it.</li>
           </ul>
           <p>Searches, customizations, and downloads happen in your browser and aren&apos;t sent anywhere. Links to GitHub, npm, and Figma take you to those services, which have their own privacy policies. Like any website, the server hosting this one may keep standard request logs.</p>
           <p>To clear the stored preferences, clear this site&apos;s data in your browser settings.</p>

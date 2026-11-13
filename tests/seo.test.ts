@@ -8,7 +8,7 @@ describe('page metadata', () => {
     expect(pageFor('/').id).toBe('home');
     expect(pageFor('/', '?style=brands').id).toBe('brands');
     expect(pageFor('/docs/').id).toBe('docs');
-    expect(pageFor('/pricing').id).toBe('pricing');
+    expect(pageFor('/pricing').id).toBe('not-found');
     expect(pageFor('/brands').id).toBe('brands');
     expect(pageFor('/nope').id).toBe('not-found');
   });

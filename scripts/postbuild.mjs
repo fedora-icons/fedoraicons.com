@@ -49,7 +49,7 @@ async function writePage(file, id, location, locale) {
 
 // Every page in every language. Non-default languages live under /<locale>/;
 // one 404.html serves every language (the app reads the language from the URL).
-const ROUTES = [['home', '/'], ['docs', '/docs'], ['pricing', '/pricing'], ['brands', '/?style=brands']];
+const ROUTES = [['home', '/'], ['docs', '/docs'], ['brands', '/?style=brands']];
 let written = 0;
 for (const { code } of LOCALES) {
   const prefix = code === DEFAULT_LOCALE ? '' : `${code}/`;
@@ -119,7 +119,6 @@ writeFileSync(join(dist, 'llms.txt'), [
   '## Optional',
   '',
   `- [Brand icons](${absolute('/brands')}): ${brands.approved.map((b) => b.name).join(', ')}.`,
-  `- [Pricing](${absolute('/pricing')}): everything is free today.`,
   '',
 ].join('\n'));
 

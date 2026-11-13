@@ -47,9 +47,6 @@ export function Layout() {
           <footer className="border-t border-line">
             <div className={`${CONTAINER} flex flex-col gap-3 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between`}>
               <nav aria-label={t('footer.nav')} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                <LocalLink to="/docs" className={footerLink}>
-                  <UiIcon name="book-open" className="size-4" /> {t('footer.docs')}
-                </LocalLink>
                 <LocalLink to="/docs#privacy" className={footerLink}>{t('footer.privacy')}</LocalLink>
                 <a href={LIBRARY_URL} className={footerLink}>
                   {t('footer.github')} <UiIcon name="link-external" className="size-3.5" />

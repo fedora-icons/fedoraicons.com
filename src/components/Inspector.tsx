@@ -9,6 +9,7 @@ import { copyText } from '../lib/export';
 import { reactSnippet } from '../lib/react-snippet';
 import { resolveLook, strokeAdjustable, strokeOf, type Look } from '../lib/look';
 import { BASE_STROKE, buildSvg, hasFilledDetails, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
+import { PANE_WIDTH, usePaneWidth } from '../lib/pane-width';
 import { useTheme } from '../lib/theme';
 import { CodeBlock } from './CodeBlock';
 import { ExportPanel } from './ExportPanel';
@@ -351,6 +352,8 @@ export function SidePane({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { t } = useI18n();
+  const [width, setWidth] = usePaneWidth();
+  const [resizing, setResizing] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -370,10 +373,60 @@ export function SidePane({
       <aside
         aria-label={t('pane.label')}
         onKeyDown={(e) => { if (e.key === 'Escape' && !collapsed) { e.stopPropagation(); onDismiss(); } }}
-        className={`sticky top-0 flex h-dvh shrink-0 flex-col overflow-hidden border-l border-line bg-surface transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          collapsed ? 'w-14' : 'w-[380px]'
-        }`}
+        style={{ width: collapsed ? undefined : width }}
+        className={`sticky top-0 flex h-dvh shrink-0 flex-col overflow-hidden border-l border-line bg-surface ${
+          resizing ? '' : 'transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'
+        } ${collapsed ? 'w-14' : ''}`}
       >
+        {!collapsed && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('pane.resize')}
+            aria-controls="side-pane-body"
+            aria-valuemin={PANE_WIDTH.min}
+            aria-valuemax={PANE_WIDTH.max}
+            aria-valuenow={width}
+            aria-valuetext={t('customize.pxValue', { value: width })}
+            title={t('pane.resizeHint')}
+            tabIndex={0}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              e.preventDefault();
+              const startX = e.clientX;
+              const startWidth = width;
+              const handle = e.currentTarget;
+              handle.setPointerCapture(e.pointerId);
+              setResizing(true);
+              // The pane sits on the right, so dragging left widens it.
+              const move = (ev: PointerEvent) => setWidth(startWidth + (startX - ev.clientX), false);
+              const end = (ev: PointerEvent) => {
+                setWidth(startWidth + (startX - ev.clientX));
+                setResizing(false);
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', end);
+                handle.removeEventListener('pointercancel', end);
+              };
+              handle.addEventListener('pointermove', move);
+              handle.addEventListener('pointerup', end);
+              handle.addEventListener('pointercancel', end);
+            }}
+            onDoubleClick={() => setWidth(PANE_WIDTH.default)}
+            onKeyDown={(e) => {
+              const next = e.key === 'ArrowLeft' ? width + PANE_WIDTH.step
+                : e.key === 'ArrowRight' ? width - PANE_WIDTH.step
+                  : e.key === 'Home' ? PANE_WIDTH.min
+                    : e.key === 'End' ? PANE_WIDTH.max
+                      : e.key === 'Enter' ? PANE_WIDTH.default : null;
+              if (next === null) return;
+              e.preventDefault();
+              setWidth(next);
+            }}
+            className="group absolute inset-y-0 left-0 z-20 w-2 -translate-x-1/2 cursor-col-resize touch-none outline-none"
+          >
+            <span className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 transition-colors group-hover:bg-brand group-focus-visible:bg-brand ${resizing ? 'bg-brand' : ''}`} />
+          </div>
+        )}
         <div className={`flex h-[57px] shrink-0 items-center border-b border-line px-2.5 ${collapsed ? 'justify-center' : ''}`}>
           <IconButton
             icon="layout-sidebar-right"
@@ -404,7 +457,8 @@ export function SidePane({
         <div
           id="side-pane-body"
           hidden={collapsed}
-          className="min-h-0 w-[380px] flex-1 overflow-y-auto overscroll-contain"
+          style={{ width }}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
           {children}
         </div>

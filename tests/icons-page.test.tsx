@@ -222,13 +222,15 @@ describe('Icons page', () => {
     expect(copyScale.disabled).toBe(false);
   });
 
-  it('keeps Docs and GitHub in the footer, not the header', () => {
+  it('puts Docs in the header and keeps GitHub and Privacy in the footer', () => {
     renderAt('/');
     const header = screen.getByRole('banner');
-    expect(within(header).queryByRole('link', { name: /Docs|GitHub/ })).toBeNull();
+    expect(within(header).getAllByRole('link', { name: 'Docs' })[0].getAttribute('href')).toBe('/docs');
+    expect(within(header).queryByRole('link', { name: /GitHub|Pricing/ })).toBeNull();
     const footer = screen.getByRole('contentinfo');
-    expect(within(footer).getByRole('link', { name: 'Docs' }).getAttribute('href')).toBe('/docs');
+    expect(within(footer).queryByRole('link', { name: 'Docs' })).toBeNull();
     expect(within(footer).getByRole('link', { name: /GitHub/ })).toBeTruthy();
+    expect(within(footer).getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe('/docs#privacy');
   });
 
   it('offers Brands as the last style option with the approved marks', async () => {
@@ -294,6 +296,24 @@ describe('Side pane (desktop)', () => {
     await user.click(within(pane).getByRole('button', { name: /Reset to defaults/ }));
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.8');
     expect(grid.style.getPropertyValue('--glyph-size')).toBe('48px');
+  });
+
+  it('resizes with the keyboard, remembers the width, and resets', async () => {
+    const user = userEvent.setup();
+    renderAt('/');
+    const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
+    const handle = within(pane).getByRole('separator', { name: 'Resize panel' });
+    expect(handle.getAttribute('aria-valuenow')).toBe('380');
+    handle.focus();
+    await user.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(handle.getAttribute('aria-valuenow')).toBe('412');
+    expect(pane.style.width).toBe('412px');
+    expect(localStorage.getItem('fedora-pane-width')).toBe('412');
+    await user.keyboard('{End}');
+    expect(handle.getAttribute('aria-valuenow')).toBe('640');
+    await user.keyboard('{Enter}');
+    expect(handle.getAttribute('aria-valuenow')).toBe('380');
+    expect(localStorage.getItem('fedora-pane-width')).toBeNull();
   });
 
   it('has no stroke control for Solid', async () => {

@@ -20,8 +20,6 @@ const en = {
   'meta.home.description': '{icons} free, {license}-licensed SVG icons in {styles}. Search, recolor, and resize them, then export SVG or PNG, or use them in React and Figma.',
   'meta.docs.title': 'Docs — Use Fedora Icons in SVG, React, and Figma',
   'meta.docs.description': 'How to use Fedora Icons: the four styles, SVG files, the React package, Figma, colors, sizes, {modifiers} modifiers, accessibility, licensing, and privacy.',
-  'meta.pricing.title': 'Pricing — Fedora Icons',
-  'meta.pricing.description': "Fedora Icons is free today: all {icons} core icons in {styles}, under the {license} license. Plans haven't been announced yet.",
   'meta.brands.title': 'Brand icons — Fedora Icons',
   'meta.brands.description': '{brands} brand logos, including social networks, Google Chrome, and Microsoft Edge, Teams, and Windows, shown as their owners provide them. Not covered by the {license} license.',
   'meta.notFound.title': 'Page not found — Fedora Icons',
@@ -36,13 +34,12 @@ const en = {
   'header.preparing': 'Preparing…',
   'header.downloadDescription': 'ZIP of every free icon in every style, with the license.',
   'header.figma': 'Figma',
-  'header.pricing': 'Pricing',
+  'header.docs': 'Docs',
   'header.menu': 'Menu',
   'header.downloaded': 'Downloaded {file}',
 
   // Footer
   'footer.nav': 'Footer',
-  'footer.docs': 'Docs',
   'footer.privacy': 'Privacy',
   'footer.github': 'GitHub',
   'footer.license': 'Core icons are <link>MIT licensed</link>. Brand icons are licensed separately.',
@@ -139,19 +136,14 @@ const en = {
   'notFound.brands': 'Brand icons',
   'notFound.popular': 'Popular categories',
 
-  // Pricing
-  'pricing.eyebrow': 'Pricing',
-  'pricing.title': 'Pricing is coming soon.',
-  'pricing.body': "Plans haven't been announced yet. Everything on this site is free today: all {count} core icons in {styles}, under the {license} license.",
-  'pricing.browse': 'Browse the free icons',
-  'pricing.github': 'View on GitHub',
-
   // Side pane
   'pane.label': 'Icon panel',
   'pane.expand': 'Expand panel',
   'pane.collapse': 'Collapse panel',
   'pane.feedback': 'Feedback',
   'pane.feedbackNewTab': ' (opens GitHub in a new tab)',
+  'pane.resize': 'Resize panel',
+  'pane.resizeHint': 'Drag to resize. Double-click to reset.',
 
   // Customize
   'customize.title': 'Customize',
