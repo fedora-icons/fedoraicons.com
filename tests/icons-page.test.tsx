@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { Layout } from '../src/components/Layout';
 import { resetSectionState } from '../src/components/Customize';
+import { resetExportRows } from '../src/components/ExportPanel';
 import { ToastProvider } from '../src/components/ui';
 import { catalog, resetStyleCache } from '../src/lib/catalog';
 import { ThemeProvider } from '../src/lib/theme';
@@ -49,6 +50,9 @@ const fetchMock = vi.fn(async (url: string) => {
   if (url.endsWith('modifiers.json')) {
     return new Response(readFileSync(join(__dirname, '../public/modifiers.json'), 'utf8'), { status: 200 });
   }
+  if (url.includes('brands/')) {
+    return new Response(readFileSync(join(__dirname, '../public', url.slice(url.indexOf('brands/'))), 'utf8'), { status: 200 });
+  }
   const style = /icons\/(\w+)\.json/.exec(url)![1] as 'regular';
   return new Response(JSON.stringify(styleSvgs(style)), { status: 200 });
 });
@@ -61,7 +65,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.removeAttribute('open'); };
 });
-afterEach(() => { cleanup(); resetSectionState(); vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); });
+afterEach(() => { cleanup(); resetSectionState(); resetExportRows(); vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe('Icons page', () => {
   it('shows the full catalog count from source data and loads only one style', async () => {
@@ -169,6 +173,39 @@ describe('Icons page', () => {
     expect(enabled).toEqual(['Bottom left']);
   });
 
+  it('exports through Figma-style scale and format rows', async () => {
+    const user = userEvent.setup();
+    renderAt('/?icon=search');
+    const list = await screen.findByRole('list', { name: 'Export settings' });
+    // The page grid is large; query inside the Export section only.
+    const ex = within(list.closest('section')!);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+    // SVG is vector, so its scale is fixed.
+    expect((ex.getByLabelText('Scale, row 1') as HTMLSelectElement).disabled).toBe(true);
+    expect((ex.getByRole('button', { name: 'Remove row 1' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(ex.getByRole('button', { name: /^Export search$/ })).toBeTruthy();
+
+    await user.click(ex.getByRole('button', { name: 'Add export setting' }));
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+    await user.selectOptions(ex.getByLabelText('Format, row 2'), 'png');
+    const scale2 = ex.getByLabelText('Scale, row 2') as HTMLSelectElement;
+    expect(scale2.disabled).toBe(false);
+    expect(scale2.selectedOptions[0].textContent).toBe('1.5x');
+    expect(ex.getByRole('button', { name: 'Export search (2)' })).toBeTruthy();
+
+    await user.click(ex.getByRole('button', { name: 'Options, row 2' }));
+    expect((ex.getByLabelText('Suffix') as HTMLInputElement).placeholder).toBe('-72px');
+
+    await user.click(ex.getByRole('button', { name: 'Remove row 1' }));
+    expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+
+    // Copy follows the same shape; scale only applies to images.
+    const copyScale = ex.getByLabelText('Copy scale') as HTMLSelectElement;
+    expect(copyScale.disabled).toBe(true);
+    await user.selectOptions(ex.getByLabelText('Copy as'), 'png');
+    expect(copyScale.disabled).toBe(false);
+  });
+
   it('keeps Docs and GitHub in the footer, not the header', () => {
     renderAt('/');
     const header = screen.getByRole('banner');
@@ -178,17 +215,31 @@ describe('Icons page', () => {
     expect(within(footer).getByRole('link', { name: /GitHub/ })).toBeTruthy();
   });
 
-  it('offers Brands as the last style option and shows the empty state', async () => {
+  it('offers Brands as the last style option with the approved marks', async () => {
     const user = userEvent.setup();
-    renderAt('/?q=arrow');
+    renderAt('/?q=twitter');
     const switcher = screen.getByRole('radiogroup', { name: 'Icon style' });
     const labels = within(switcher).getAllByRole('radio').map((r) => r.textContent);
     expect(labels).toEqual(['Regular', 'Solid', 'Duocolor', 'Duotone', 'Brands']);
     await user.click(within(switcher).getByRole('radio', { name: 'Brands' }));
-    expect(location).toBe('?q=arrow&style=brands');
-    expect(screen.getByRole('heading', { name: 'No brand icons are available yet' })).toBeTruthy();
+    expect(location).toBe('?q=twitter&style=brands');
     expect(screen.getByText('All brand icons belong to their respective owners.')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Search brands' })).toBeTruthy();
+    // No brand ships Solid yet, so there is no Regular/Solid switch.
+    expect(screen.queryByRole('radiogroup', { name: 'Brand style' })).toBeNull();
+    // X is found by its former name.
+    const grid = screen.getByRole('list', { name: 'Brand icons' });
+    await vi.waitFor(() => expect(grid.querySelector('svg')).toBeTruthy());
+    expect(within(grid).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['x']);
+  });
+
+  it('namespaces brand IDs so marks sharing gradient IDs do not collide', async () => {
+    const { loadBrands } = await import('../src/lib/brands');
+    const svgs = await loadBrands('regular');
+    expect(Object.keys(svgs)).toHaveLength(32);
+    const ids = Object.values(svgs).flatMap((svg) => [...svg.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(svgs['google-chrome']).toMatch(/id="brand-google-chrome-regular-0"/);
   });
 });
 
@@ -202,9 +253,9 @@ describe('Side pane (desktop)', () => {
     expect(within(pane).getByRole('heading', { name: 'Customize' })).toBeTruthy();
     await screen.findAllByRole('button', { name: 'search' });
     const grid = screen.getByRole('list', { name: 'Regular icons' }).parentElement!;
-    // Default: 48px with the automatic 1.01px stroke (1.01 / 1.25 = 0.808).
+    // Default: 48px with the automatic 1px stroke (1 / 1.25 = 0.8).
     expect(grid.style.getPropertyValue('--glyph-size')).toBe('48px');
-    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.808');
+    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.8');
     expect(within(pane).getByText('Auto')).toBeTruthy();
 
     // The slider covers what the grid previews; larger sizes go in the px field.
@@ -222,10 +273,10 @@ describe('Side pane (desktop)', () => {
     fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '32' } });
     expect(grid.style.getPropertyValue('--stroke-scale')).toBe('2');
     await user.click(within(pane).getByRole('button', { name: 'Use auto' }));
-    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.936');
+    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.92');
 
     await user.click(within(pane).getByRole('button', { name: /Reset to defaults/ }));
-    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.808');
+    expect(grid.style.getPropertyValue('--stroke-scale')).toBe('0.8');
     expect(grid.style.getPropertyValue('--glyph-size')).toBe('48px');
   });
 
@@ -377,7 +428,7 @@ describe('Inspector sections (desktop)', () => {
     const toggle = await within(pane).findByRole('button', { name: 'React' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(document.getElementById(toggle.getAttribute('aria-controls')!)!.hidden).toBe(true);
-    expect(within(pane).getByRole('button', { name: 'Copy' })).toBeTruthy();
+    expect(within(toggle.closest('section')!).getByRole('button', { name: 'Copy' })).toBeTruthy();
     await user.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     const code = pane.querySelector('.code-block code')!;
@@ -401,7 +452,7 @@ describe('Inspector sections (desktop)', () => {
   it('says when filled parts of an icon keep their weight as the stroke changes', async () => {
     renderAt('/?icon=cloud-moon');
     const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
-    // Default 48px Auto stroke is 1.01px, not the drawn 1.25px.
+    // Default 48px Auto stroke is 1px, not the drawn 1.25px.
     expect(await within(pane).findByText(/drawn as filled shapes/)).toBeTruthy();
   });
 

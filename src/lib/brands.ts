@@ -1,6 +1,7 @@
 import brandData from '../data/brands.json';
 import type { IconEntry } from './catalog';
-import type { BrandStyle } from './url-state';
+import { scopeSvg } from './svg';
+import { BRAND_STYLES, type BrandStyle } from './url-state';
 
 export interface BrandEntry {
   name: string;
@@ -16,13 +17,16 @@ export interface BrandEntry {
 
 export const brands = brandData as { disclaimer: string; approved: BrandEntry[] };
 
-/** Approved brands as searchable entries. Empty until assets are approved. */
+/** Approved brands as searchable entries. */
 export const brandEntries: IconEntry[] = brands.approved.map((b) => ({
   name: b.name, category: b.category, tags: [b.owner.toLowerCase()], aliases: b.aliases ?? [],
 }));
 
 export const brandCategories = [...new Set(brandEntries.map((e) => e.category))].sort()
   .map((name) => ({ name, count: brandEntries.filter((e) => e.category === name).length }));
+
+/** Brand styles at least one approved brand ships (Solid only once a Solid source exists). */
+export const availableBrandStyles: BrandStyle[] = BRAND_STYLES.filter((s) => brands.approved.some((b) => b.files[s]));
 
 export const hasBrandStyle = (name: string, style: BrandStyle) =>
   !!brands.approved.find((b) => b.name === name)?.files[style];
@@ -37,7 +41,9 @@ export function loadBrands(style: BrandStyle): Promise<Record<string, string>> {
       if (!file) return null;
       const res = await fetch(`${import.meta.env.BASE_URL}${file}`);
       if (!res.ok) throw new Error(`Could not load ${b.name} (${res.status})`);
-      return [b.name, await res.text()] as const;
+      // Marks are shown unmodified, but their IDs (gradients, clip paths) are
+      // namespaced so marks sharing an ID don't repaint each other on one page.
+      return [b.name, scopeSvg(await res.text(), `brand-${b.name}-${style}`)] as const;
     })).then((rows) => Object.fromEntries(rows.filter((r) => r !== null))).catch((error: unknown) => {
       cache.delete(style);
       throw error;

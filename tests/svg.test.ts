@@ -93,11 +93,13 @@ describe('buildSvg', () => {
 });
 
 describe('autoStroke', () => {
-  it('is 1.25 at 24px, 0.85 at 64px, linear between, and held above 64px', async () => {
+  it('is 1.25 at 24px, 0.85 at 64px, linear in 0.05 steps between, and held above 64px', async () => {
     const { autoStroke } = await import('../src/lib/look');
     expect(autoStroke(24)).toBe(1.25);
     expect(autoStroke(64)).toBe(0.85);
     expect(autoStroke(44)).toBe(1.05);
+    expect(autoStroke(48)).toBe(1);
+    expect(autoStroke(40)).toBe(1.1);
     expect(autoStroke(512)).toBe(0.85);
     expect(autoStroke(16)).toBeGreaterThan(1.25);
   });

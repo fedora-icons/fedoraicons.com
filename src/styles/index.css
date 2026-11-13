@@ -107,6 +107,13 @@
     height: 100%;
     display: block;
   }
+  /* Brand marks keep their own colors; in the dark theme a light tile keeps
+     dark marks (Apple, GitHub, X) visible without recoloring them. */
+  .dark[data-brand-marks] .glyph[data-artwork] {
+    background: #f2f2f2;
+    border-radius: 22%;
+    box-shadow: 0 0 0 max(3px, 0.15em) #f2f2f2;
+  }
   .icon-cell {
     content-visibility: auto;
     contain-intrinsic-size: auto 130px;
