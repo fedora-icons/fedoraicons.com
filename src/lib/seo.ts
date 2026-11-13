@@ -10,7 +10,8 @@ import { FIGMA_URL, LIBRARY_URL } from './links';
  * Counts come from the synced catalog; nothing here is hard-coded.
  */
 
-export const SITE_URL = 'https://fedoraicons.com';
+/** The production origin. Vercel redirects fedoraicons.com here, so canonical links must use www. */
+export const SITE_URL = 'https://www.fedoraicons.com';
 export const SITE_NAME = 'Fedora Icons';
 export const GITHUB_ORG_URL = 'https://github.com/fedora-icons';
 export const NPM_REACT_URL = 'https://www.npmjs.com/package/@fedora-icons/react';

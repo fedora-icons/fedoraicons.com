@@ -135,7 +135,7 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   `public/app/` are rendered from real library artwork and the mark by
   `node scripts/brand-images.mjs` (needs Chrome). Re-run it when the mark or
   showcase icons change.
-- `SITE_URL` in `src/lib/seo.ts` is `https://fedoraicons.com`. Canonical
+- `SITE_URL` in `src/lib/seo.ts` is `https://www.fedoraicons.com`. Canonical
   links have no trailing slash (`/docs`), so the host should serve
   `docs/index.html` at `/docs` without redirecting.
 
@@ -202,4 +202,4 @@ tests/                    Vitest suites
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Nothing has been deployed.
+Live at https://www.fedoraicons.com on Vercel; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

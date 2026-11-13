@@ -37,7 +37,7 @@
   --c-sunken: #f3f3f1;
   --c-ink: #212121;
   --c-muted: #5c5c5c;
-  --c-faint: #8a8a8a;
+  --c-faint: #6d6d6d; /* ≥ 4.5:1 on canvas, surface, and sunken (WCAG AA) */
   --c-line: #e7e7e4;
   --c-line-strong: #cfcfcb;
   --c-brand: #245b9e;
