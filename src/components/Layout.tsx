@@ -41,6 +41,7 @@ export function Layout() {
                 <Link to="/docs" className={footerLink}>
                   <UiIcon name="book-open" className="size-4" /> Docs
                 </Link>
+                <Link to="/docs#privacy" className={footerLink}>Privacy</Link>
                 <a href={LIBRARY_URL} className={footerLink}>
                   GitHub <UiIcon name="link-external" className="size-3.5" />
                 </a>

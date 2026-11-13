@@ -9,6 +9,8 @@ import { resolveLook, strokeAdjustable, strokeOf, type Look } from '../lib/look'
 import { BASE_STROKE, buildSvg, hasFilledDetails, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
 import { useTheme } from '../lib/theme';
 import { CodeBlock } from './CodeBlock';
+import { ModifierPicker, useModifiers, type ModifierChoice } from './ModifierPicker';
+import { composeSvg, CORNER_LABELS, modifiersFor, type Corner } from '../lib/modifiers';
 import { ColorField, CustomizeControls, Section } from './Customize';
 import { ThemeToggle } from './ThemeToggle';
 import { Button, IconButton, Segmented, UiIcon, useToast } from './ui';
@@ -33,7 +35,7 @@ export interface InspectorProps {
 }
 
 export function Inspector({
-  icon, style, styles, source, look, onLookChange, onStyleChange, onSelectIcon, onClose, kind = 'core', headingId,
+  icon, style, styles, source: librarySource, look, onLookChange, onStyleChange, onSelectIcon, onClose, kind = 'core', headingId,
 }: InspectorProps) {
   const toast = useToast();
   const { resolved: theme } = useTheme();
@@ -44,6 +46,18 @@ export function Inspector({
   const strokeWidth = strokeAdjustable(style, kind) ? strokeOf(look) : undefined;
 
   const [modifier, setModifier] = useState<string | null>(null);
+  const [badge, setBadge] = useState<ModifierChoice | null>(null);
+  const canTryModifiers = kind === 'core' && !icon.composition;
+  const composed = useMemo(() => {
+    if (!badge || !librarySource) return { svg: librarySource, error: null };
+    try {
+      return { svg: composeSvg(librarySource, badge.modifier, badge.corner, style), error: null };
+    } catch (e) {
+      return { svg: librarySource, error: e instanceof Error ? e.message : 'Could not compose this modifier.' };
+    }
+  }, [badge, librarySource, style]);
+  /** The artwork every preview and export uses: the library icon, plus any modifier being tried. */
+  const source = composed.svg;
   const [scale, setScale] = useState<(typeof PNG_SCALES)[number]>(2);
   const [busy, setBusy] = useState(false);
 
@@ -77,8 +91,23 @@ export function Inspector({
   }, [source, colors, size, uid, strokeWidth]);
 
   const slug = STYLE_META[style].slug;
-  const baseName = `${icon.name}-${slug}`;
+  const baseName = badge ? `${icon.name}-${badge.modifier.name}-${badge.corner}-${slug}` : `${icon.name}-${slug}`;
   const family = kind === 'core' ? modifierFamily(icon.name) : null;
+  /** Modifiers the library authored on this base, by corner (single-modifier compositions). */
+  const authored = useMemo(() => {
+    const map = new Map<string, Set<Corner>>();
+    const names = new Map<string, string>();
+    for (const v of family?.variants ?? []) {
+      const mods = v.composition!.modifiers;
+      if (mods.length !== 1) continue;
+      if (!map.has(mods[0].name)) map.set(mods[0].name, new Set());
+      map.get(mods[0].name)!.add(mods[0].position as Corner);
+      names.set(`${mods[0].name}:${mods[0].position}`, v.name);
+    }
+    return { map, names };
+  }, [family]);
+  const authoredMatch = badge ? authored.names.get(`${badge.modifier.name}:${badge.corner}`) : undefined;
+  const modifiers = useModifiers(canTryModifiers && !!librarySource);
 
   const run = async (action: () => Promise<void> | void, success: string) => {
     setBusy(true);
@@ -137,10 +166,64 @@ export function Inspector({
             <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{size}px</strong>{size === 24 ? 'Selected size' : 'Scaled'}</figcaption>
           </figure>
         </div>
-        <p className="mt-2 text-xs leading-relaxed text-faint">
-          All sizes scale the 24px master. Fedora has no separately authored optical sizes yet — check icons at their final size.
-        </p>
       </div>
+
+      {kind === 'core' && (
+        <Section title="Modifier">
+          {icon.composition ? (
+            <p className="text-sm leading-relaxed text-muted">
+              A library icon: {compositionLabel(icon.composition)}.{' '}
+              <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(icon.composition!.base)}>
+                Try other modifiers on {icon.composition.base}
+              </button>
+            </p>
+          ) : modifiers.error ? (
+            <p className="text-sm text-danger">{modifiers.error}</p>
+          ) : !modifiers.list ? (
+            <div className="h-24 animate-pulse rounded-xl bg-sunken" />
+          ) : (
+            <>
+              <ModifierPicker modifiers={modifiersFor(icon.name, modifiers.list)} value={badge} onChange={setBadge} authored={authored.map} />
+              <div aria-live="polite" className="mt-3 text-xs leading-relaxed text-faint">
+                {composed.error ? (
+                  <p className="text-danger">{composed.error}</p>
+                ) : badge && authoredMatch ? (
+                  <p>
+                    The library has a designed version of this combination:{' '}
+                    <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(authoredMatch)}>{authoredMatch}</button>.
+                  </p>
+                ) : badge ? (
+                  <p>
+                    Preview, not a library icon: {badge.modifier.label} sits {CORNER_LABELS[badge.corner].toLowerCase()} on the unchanged icon and may cover detail. Downloads and copies include it.
+                    {authored.map.size > 0 && ' Dotted modifiers have a designed library version.'}
+                  </p>
+                ) : (
+                  <p>
+                    Pick a modifier to preview it on this icon, then choose its corner.
+                    {authored.map.size > 0 && ' Dotted modifiers have a designed library version.'}
+                  </p>
+                )}
+              </div>
+              {family && (
+                <div className="mt-3">
+                  <label htmlFor={`${uid}-mod`} className="mb-1 block text-xs text-muted">Library versions</label>
+                  <select
+                    id={`${uid}-mod`}
+                    value=""
+                    onChange={(e) => e.target.value && onSelectIcon(e.target.value)}
+                    className="h-9 w-full rounded-lg border border-line-strong bg-surface px-2 text-sm"
+                  >
+                    <option value="">Open a library version…</option>
+                    {family.variants.map((v) => (
+                      <option key={v.name} value={v.name}>{compositionLabel(v.composition!)} — {v.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+        </Section>
+      )}
 
       <Section title="Style">
         <Segmented
@@ -151,26 +234,6 @@ export function Inspector({
           options={styles.map((s) => ({ value: s, label: STYLE_META[s].label, title: STYLE_META[s].description }))}
         />
       </Section>
-
-      {family && (
-        <Section title="Modifier">
-          <label htmlFor={`${uid}-mod`} className="sr-only">Modifier</label>
-          <select
-            id={`${uid}-mod`}
-            value={icon.name}
-            onChange={(e) => onSelectIcon(e.target.value)}
-            className="h-9 w-full rounded-lg border border-line-strong bg-surface px-2 text-sm"
-          >
-            <option value={family.base.name}>None ({family.base.name})</option>
-            {family.variants.map((v) => (
-              <option key={v.name} value={v.name}>{compositionLabel(v.composition!)} — {v.name}</option>
-            ))}
-          </select>
-          <p className="mt-2 text-xs leading-relaxed text-faint">
-            Only authored compositions from the library are offered, with their designed corner and transparent clearance.
-          </p>
-        </Section>
-      )}
 
       <CustomizeControls
         look={look}
@@ -270,6 +333,7 @@ export function Inspector({
             {strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (
               <><strong className="font-medium text-ink">The React package draws the standard {BASE_STROKE}px stroke at every size</strong>; use Download SVG to keep this {strokeWidth}px stroke. </>
             )}
+            {badge && <><strong className="font-medium text-ink">The React package has no component for {icon.name} with {badge.modifier.label}</strong>; this example shows the plain icon. Use Download SVG to keep the modifier. </>}
             Install with <code className="font-mono text-ink">npm install @fedora-icons/react</code>. <a className="text-brand underline underline-offset-2" href="/docs#react">React docs</a>.
           </p>
         </Section>
@@ -323,7 +387,7 @@ export function SidePane({
           collapsed ? 'w-14' : 'w-[380px]'
         }`}
       >
-        <div className={`flex h-14 shrink-0 items-center border-b border-line px-2.5 ${collapsed ? 'justify-center' : ''}`}>
+        <div className={`flex h-[57px] shrink-0 items-center border-b border-line px-2.5 ${collapsed ? 'justify-center' : ''}`}>
           <IconButton
             icon="layout-sidebar-right"
             label={collapsed ? 'Expand panel' : 'Collapse panel'}

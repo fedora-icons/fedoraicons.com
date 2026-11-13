@@ -131,6 +131,36 @@ export function buildOutputs(source) {
     }
   }
 
+  // Every reusable modifier, with the placements and transparent clearance
+  // the library's own compose tool (scripts/compose_svg.py) uses. The site
+  // composes previews from these; it never draws or edits a modifier.
+  const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+  const modifierAssets = [...modifiers.modifiers].sort((a, b) => a.name.localeCompare(b.name)).map((m) => {
+    const allowed = m.allowedPositions ?? POSITIONS;
+    const positions = {};
+    for (const position of POSITIONS) {
+      const placement = m.positions?.[position];
+      if (!allowed.includes(position) || !placement) continue;
+      if (!placement.clearance?.length) throw new Error(`${m.name}: no clearance for ${position}`);
+      positions[position] = {
+        x: placement.x,
+        y: placement.y,
+        clearance: placement.clearance.map((p) => ({ d: p.data, evenodd: p.windingRule === 'EVENODD' })),
+      };
+    }
+    if (!Object.keys(positions).length) throw new Error(`${m.name}: no usable corner`);
+    if (m.defaultPosition && !positions[m.defaultPosition]) throw new Error(`${m.name}: default corner not allowed`);
+    return {
+      name: m.name,
+      label: m.label,
+      group: m.group,
+      defaultPosition: m.defaultPosition ?? null,
+      color: m.colors.light.primary,
+      positions,
+      svg: readVerified(source, m.file, m.sha256),
+    };
+  });
+
   const revision = git(source, 'rev-parse', 'HEAD');
   const dirty = revision ? git(source, 'status', '--porcelain', '--', 'icons', 'manifest.json', 'metadata') !== '' : null;
   const lock = {
@@ -160,6 +190,7 @@ export function buildOutputs(source) {
     if (!icon) throw new Error(`UI icon missing from library: ${name}`);
     return [name, readVerified(source, icon.files.regular, icon.sha256.regular)];
   })));
+  outputs['public/modifiers.json'] = JSON.stringify({ modifiers: modifierAssets });
   outputs['public/licenses/fedora-icons-LICENSE.txt'] = readFileSync(join(source, 'LICENSE'), 'utf8');
   outputs['src/data/source-lock.json'] = json(lock);
   return outputs;

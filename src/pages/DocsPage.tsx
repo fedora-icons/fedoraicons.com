@@ -20,6 +20,7 @@ const SECTIONS = [
   ['modifiers', 'Modifiers'],
   ['accessibility', 'Accessibility'],
   ['licensing', 'Licensing'],
+  ['privacy', 'Privacy'],
   ['source', 'Source data'],
 ] as const;
 
@@ -241,6 +242,17 @@ export default function DocsPage() {
         <Section id="licensing" title="Licensing">
           <p>The core icons and tooling are available under the <a href="/licenses/fedora-icons-LICENSE.txt">MIT License</a>.</p>
           <p>Brand icons are <strong>not</strong> covered by the MIT license. All brand icons belong to their respective owners, and their use is governed by each owner&apos;s brand guidelines. No affiliation or endorsement is implied.</p>
+        </Section>
+
+        <Section id="privacy" title="Privacy">
+          <p>This site sets no cookies and runs no analytics, ads, or tracking scripts. Fonts and icons are served from this site, not from third parties.</p>
+          <p>Your browser&apos;s local storage keeps two preferences, and only on your device:</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li><code>fedora-theme</code>: light or dark, when you pick one instead of following your system.</li>
+            <li><code>fedora-pane-collapsed</code>: whether the side pane is collapsed.</li>
+          </ul>
+          <p>Searches, customizations, and downloads happen in your browser and aren&apos;t sent anywhere. Links to GitHub, npm, and Figma take you to those services, which have their own privacy policies. Like any website, the server hosting this one may keep standard request logs.</p>
+          <p>To clear the stored preferences, clear this site&apos;s data in your browser settings.</p>
         </Section>
 
         <Section id="source" title="Source data">

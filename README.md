@@ -73,8 +73,18 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   Copy image, Copy name, and a React example. Exports resolve every CSS variable
   and `currentColor` to concrete colors and preserve masks, clip paths, IDs,
   and the Duotone 16% tint. No XAML export exists: its target dialect is undefined.
-- **Modifiers**: only the library's authored compositions (manifest
-  `composition` entries) are offered. No arbitrary combinations are generated.
+- **Modifiers**: the inspector's Modifier section previews any of the
+  library's modifiers on the selected core icon, in tabs by category, at any
+  corner the modifier supports (`public/modifiers.json`, synced from
+  `metadata/modifiers.json`, loaded on demand). File-type labels are offered
+  only on file and folder icons, image-quality marks only on images. Previews
+  are composed exactly as the library's `scripts/compose_svg.py` composes its
+  presets (transparent clearance, cutout glyph, `--fedora-modifier` in duo
+  styles), but the base is not refitted, so the badge may cover detail. They
+  are labeled as previews, and downloads and copies include them. When a
+  designed library version exists, the pane links to it.
+- **Side pane sections** collapse and expand; the choice holds while you
+  switch icons.
 - **Brands**: the last option in the style switcher (`/?style=brands`; the old
   `/brands` URL redirects). Regular/Solid only, gated by `src/data/brands.json`.
   It is empty until assets are approved, so it shows a deliberate empty state.
@@ -89,7 +99,8 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   core with TSX, HTML, CSS, and shell, loaded on demand). Shell samples are
   shown as a terminal.
 - **Docs** (linked from the footer, with GitHub): SVG, React, Figma, colors, sizes, modifiers, accessibility,
-  licensing, and source revision. The side nav marks the section being read,
+  licensing, privacy (no cookies or tracking; the two local-storage
+  preferences, named), and source revision. The footer links to Privacy. The side nav marks the section being read,
   and in-page links scroll smoothly (instantly with reduced motion).
 
 ## Layout

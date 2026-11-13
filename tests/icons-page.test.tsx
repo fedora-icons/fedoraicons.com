@@ -4,10 +4,13 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { Layout } from '../src/components/Layout';
+import { resetSectionState } from '../src/components/Customize';
 import { ToastProvider } from '../src/components/ui';
 import { catalog, resetStyleCache } from '../src/lib/catalog';
 import { ThemeProvider } from '../src/lib/theme';
 import { IconsPage } from '../src/pages/IconsPage';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { styleSvgs } from './helpers';
 
 let location = '';
@@ -43,6 +46,9 @@ function useDesktop() {
 }
 
 const fetchMock = vi.fn(async (url: string) => {
+  if (url.endsWith('modifiers.json')) {
+    return new Response(readFileSync(join(__dirname, '../public/modifiers.json'), 'utf8'), { status: 200 });
+  }
   const style = /icons\/(\w+)\.json/.exec(url)![1] as 'regular';
   return new Response(JSON.stringify(styleSvgs(style)), { status: 200 });
 });
@@ -55,7 +61,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.removeAttribute('open'); };
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); });
+afterEach(() => { cleanup(); resetSectionState(); vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe('Icons page', () => {
   it('shows the full catalog count from source data and loads only one style', async () => {
@@ -116,12 +122,51 @@ describe('Icons page', () => {
     expect(fetchMock.mock.calls.map((c) => c[0]).some((u) => /duotone\.json$/.test(u))).toBe(true);
   });
 
-  it('offers only authored modifier compositions for a base icon', async () => {
+  it('links to the library versions of a base icon', async () => {
     renderAt('/?icon=user');
-    const select = (await screen.findByLabelText('Modifier')) as HTMLSelectElement;
+    // The grid makes label queries slow; find the select directly once modifiers load.
+    const select = await vi.waitFor(() => {
+      const label = Array.from(document.querySelectorAll('label')).find((l) => l.textContent === 'Library versions');
+      if (!label) throw new Error('Modifiers not loaded yet');
+      return document.getElementById(label.htmlFor) as HTMLSelectElement;
+    }, { timeout: 8000 });
     const options = Array.from(select.options).map((o) => o.value);
     const expected = catalog.icons.filter((i) => i.composition?.base === 'user').map((i) => i.name);
-    expect(options).toEqual(['user', ...expected]);
+    expect(options).toEqual(['', ...expected]);
+  });
+
+  it('previews any modifier on an icon, in the corners it supports', async () => {
+    const user = userEvent.setup();
+    renderAt('/?icon=agent');
+    const preview = await screen.findByRole('img', { name: /agent, Regular, scaled preview/ });
+    expect(preview.innerHTML).not.toContain('clip-path');
+
+    await user.click(await screen.findByRole('tab', { name: 'Access' }, { timeout: 8000 }));
+    await user.click(screen.getByRole('button', { name: /^Lock modifier/ }));
+    expect(screen.getByRole('button', { name: /^Lock modifier/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Bottom right' }).getAttribute('aria-pressed')).toBe('true');
+    expect(preview.innerHTML).toMatch(/x="12.75" y="12.75"/);
+    expect(screen.getByText(/Preview, not a library icon/)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Top left' }));
+    expect(preview.innerHTML).toMatch(/x="1.25" y="1.25"/);
+
+    // File-type and image-quality modifiers only apply to files, folders, and images.
+    expect(screen.queryByRole('tab', { name: 'Files' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Quality' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'None' }));
+    expect(preview.innerHTML).not.toContain('clip-path');
+  });
+
+  it('offers file-type labels on files, only in the corners they support', async () => {
+    const user = userEvent.setup();
+    renderAt('/?icon=file');
+    await user.click(await screen.findByRole('tab', { name: 'Files' }, { timeout: 8000 }));
+    await user.click(screen.getByRole('button', { name: /^PDF modifier/ }));
+    const enabled = ['Top left', 'Top right', 'Bottom left', 'Bottom right']
+      .filter((c) => !(screen.getByRole('button', { name: c }) as HTMLButtonElement).disabled);
+    expect(enabled).toEqual(['Bottom left']);
   });
 
   it('keeps Docs and GitHub in the footer, not the header', () => {
