@@ -3,21 +3,21 @@ import { createPortal } from 'react-dom';
 import {
   compositionLabel, modifierFamily, STYLE_META, type IconEntry, type StyleId,
 } from '../lib/catalog';
-import { copyPng, copyText, downloadBlob, svgBlob, svgToPng } from '../lib/export';
+import { copyText } from '../lib/export';
 import { reactSnippet } from '../lib/react-snippet';
 import { resolveLook, strokeAdjustable, strokeOf, type Look } from '../lib/look';
 import { BASE_STROKE, buildSvg, hasFilledDetails, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
 import { useTheme } from '../lib/theme';
 import { CodeBlock } from './CodeBlock';
+import { ExportPanel } from './ExportPanel';
 import { ModifierPicker, useModifiers, type ModifierChoice } from './ModifierPicker';
 import { composeSvg, CORNER_LABELS, modifiersFor, type Corner } from '../lib/modifiers';
 import { ColorField, CustomizeControls, Section } from './Customize';
 import { ThemeToggle } from './ThemeToggle';
-import { Button, IconButton, Segmented, UiIcon, useToast } from './ui';
+import { IconButton, Segmented, UiIcon, useToast } from './ui';
 
 const FEEDBACK_URL = 'https://github.com/fedora-icons/fedoraicons.com/issues/new';
 
-const PNG_SCALES = [1, 2, 4] as const;
 
 export interface InspectorProps {
   icon: IconEntry;
@@ -58,7 +58,6 @@ export function Inspector({
   }, [badge, librarySource, style]);
   /** The artwork every preview and export uses: the library icon, plus any modifier being tried. */
   const source = composed.svg;
-  const [scale, setScale] = useState<(typeof PNG_SCALES)[number]>(2);
   const [busy, setBusy] = useState(false);
 
   const showSecondary = !!source && duo && hasSecondaryRole(source);
@@ -76,6 +75,21 @@ export function Inspector({
     if (!source) throw new Error('Icon artwork is still loading.');
     return buildSvg(source, { ...colors, size: px, idPrefix, strokeWidth });
   };
+
+  const stickySentinel = useRef<HTMLDivElement>(null);
+  const [samplesStuck, setSamplesStuck] = useState(false);
+  useEffect(() => {
+    const sentinel = stickySentinel.current;
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+    // Observe against the pane's own scroll area (or the mobile sheet).
+    const root = sentinel.closest('#side-pane-body, dialog');
+    const observer = new IntersectionObserver(
+      ([entry]) => setSamplesStuck(!entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0) + 1),
+      { root },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   const preview = useMemo(() => {
     if (!source) return null;
@@ -144,7 +158,7 @@ export function Inspector({
         <IconButton icon="x" label="Clear selection" onClick={onClose} className="-mr-2 -mt-1" />
       </div>
 
-      <div className="px-5 pb-4">
+      <div className="px-5 pb-2">
         <div className="checkerboard flex h-[200px] items-center justify-center rounded-2xl border border-line">
           {preview ? (
             <span role="img" aria-label={`${icon.name}, ${STYLE_META[style].label}, scaled preview`} className="glyph size-40" dangerouslySetInnerHTML={{ __html: preview.large }} />
@@ -152,7 +166,15 @@ export function Inspector({
             <span className="size-40 animate-pulse rounded-2xl bg-sunken" />
           )}
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
+      </div>
+      <div ref={stickySentinel} aria-hidden="true" />
+      {/* Stays in view while the controls below scroll, so changes stay visible. */}
+      <div
+        className={`sticky top-0 z-10 bg-surface px-5 pb-4 transition-shadow [dialog_&]:top-4 ${
+          samplesStuck ? 'shadow-[0_8px_12px_-10px_rgb(0_0_0/0.25)]' : ''
+        }`}
+      >
+        <div className="grid grid-cols-2 gap-2 pt-1">
           <figure className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
             <span className="checkerboard flex size-10 items-center justify-center rounded-lg">
               {preview && <span className="glyph size-6" dangerouslySetInnerHTML={{ __html: preview.native }} />}
@@ -264,58 +286,14 @@ export function Inspector({
         )}
       />
 
-      <Section title="Export">
-        <div className="space-y-2">
-          <Button
-            variant="primary"
-            icon="download"
-            className="h-10 w-full"
-            disabled={!source || busy}
-            onClick={() => run(() => downloadBlob(svgBlob(build(size)), `${baseName}.svg`), `Downloaded ${baseName}.svg`)}
-          >
-            Download SVG
-          </Button>
-          <div className="flex gap-2">
-            <Button
-              icon="image"
-              className="flex-1"
-              disabled={!source || busy}
-              onClick={() => run(async () => {
-                const px = size * scale;
-                downloadBlob(await svgToPng(build(px), px), `${baseName}-${px}px.png`);
-              }, `Downloaded ${size * scale}px transparent PNG`)}
-            >
-              Download PNG
-            </Button>
-            <label className="sr-only" htmlFor={`${uid}-scale`}>PNG scale</label>
-            <select
-              id={`${uid}-scale`}
-              value={scale}
-              onChange={(e) => setScale(Number(e.target.value) as (typeof PNG_SCALES)[number])}
-              className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm"
-            >
-              {PNG_SCALES.map((s) => <option key={s} value={s}>{s}× · {size * s}px</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Button className="px-2" disabled={!source || busy} onClick={() => run(() => copyText(build(size)), 'SVG copied')}>
-              Copy SVG
-            </Button>
-            <Button
-              className="px-2"
-              disabled={!source || busy}
-              onClick={() => run(() => copyPng(Promise.resolve().then(() => svgToPng(build(size * scale), size * scale))), 'Image copied')}
-            >
-              Copy image
-            </Button>
-            <Button className="px-2" disabled={busy} onClick={() => run(() => copyText(icon.name), `Copied “${icon.name}”`)}>
-              Copy name
-            </Button>
-          </div>
-          <p className="text-xs text-faint">PNGs have transparent backgrounds. Copy image uses the selected PNG scale.</p>
-          <p className="text-xs text-faint">Shift-click more icons in the grid to download several as a ZIP.</p>
-        </div>
-      </Section>
+      <ExportPanel
+        name={icon.name}
+        baseName={baseName}
+        size={size}
+        build={(px) => build(px)}
+        disabled={!source || busy}
+        run={run}
+      />
 
       {snippet && (
         <Section

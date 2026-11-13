@@ -54,11 +54,11 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   whole grid and carried into exports. Selecting an icon shows its inspector:
   previews, style, modifiers, the same controls, exports, and React usage. On
   mobile both open as a modal bottom sheet (native `<dialog>`).
-- **Size and stroke**: icons default to 48px (Auto stroke 1.01px). Size is a
+- **Size and stroke**: icons default to 48px (Auto stroke 1px). Size is a
   slider over what the grid previews (16–64px, 4px steps) plus a px field for
   any export size from 8 to 512. Stroke is **Auto** by default and
   follows size, in 24px grid units: 1.25px at 24px, 0.85px at 64px, linear
-  between and held at 0.85px above 64px. Moving the slider (0.5–2.5px) fixes a
+  between in 0.05px steps (so 48px is 1px) and held at 0.85px above 64px. Moving the slider (0.5–2.5px) fixes a
   value until "Use auto". Every authored stroke is scaled by the same factor,
   so intentionally heavier strokes keep their proportions.
   Solid and brand artwork have no stroke control. `@fedora-icons/react` cannot
@@ -69,10 +69,15 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   loaded only when a ZIP is built). Esc or ✕ clears the set.
 - **Search tips**: the search field's ghost text rotates through these tricks
   while it is empty and unfocused.
-- **Exports**: Download SVG, Download PNG (1×/2×/4×, transparent), Copy SVG,
-  Copy image, Copy name, and a React example. Exports resolve every CSS variable
-  and `currentColor` to concrete colors and preserve masks, clip paths, IDs,
-  and the Duotone 16% tint. No XAML export exists: its target dialect is undefined.
+- **Exports**: Figma-style export settings in the inspector. Each row is a
+  scale (0.5x–4x; fixed at 1x for SVG, which is vector) and a format (PNG or
+  SVG), with an optional file-name suffix under "…". "+" adds a row, "−"
+  removes one, and the rows carry over between icons. Export downloads one
+  file, or a ZIP when there are several. Copy works the same way: copy SVG
+  code, a PNG image at a chosen scale, or the name. A React example is below.
+  Exports resolve every CSS variable and `currentColor` to concrete colors
+  and preserve masks, clip paths, IDs, and the Duotone 16% tint. PNGs are
+  transparent. No XAML export exists: its target dialect is undefined.
 - **Modifiers**: the inspector's Modifier section previews any of the
   library's modifiers on the selected core icon, in tabs by category, at any
   corner the modifier supports (`public/modifiers.json`, synced from
