@@ -179,7 +179,7 @@ export default function DocsPage() {
 
         <Section id="react" title="React">
           <p><a target="_blank" rel="noreferrer" href="https://www.npmjs.com/package/@fedora-icons/react"><code>@fedora-icons/react</code></a> is on npm. It supports React 18 and 19, ships TypeScript types, and tree-shakes to the icons you import. Source: <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/react-fedora">fedora-icons/react-fedora</a>.</p>
-          <Code lang="sh">{`npm install @fedora-icons/react`}</Code>
+          <Code lang="sh">{`npm install @fedora-icons/react\n# or\npnpm add @fedora-icons/react`}</Code>
           <p>Each style is a separate component: the canonical name in PascalCase plus a style suffix. <code>fuel-pump</code> becomes <code>FuelPumpRegular</code>, <code>FuelPumpFilled</code>, <code>FuelPumpDuocolor</code>, and <code>FuelPumpDuotone</code>. Solid icons use the <code>Filled</code> suffix. Names starting with a digit get an <code>Icon</code> prefix.</p>
           <Code lang="tsx">{`import { CameraRegular, CameraDuocolor } from '@fedora-icons/react';
 

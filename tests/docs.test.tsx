@@ -22,7 +22,10 @@ describe('Docs page', () => {
     render(<ToastProvider><MemoryRouter><DocsPage /></MemoryRouter></ToastProvider>);
     const blocks = document.querySelectorAll('.code-block');
     expect(blocks.length).toBeGreaterThan(0);
-    expect(document.querySelector('.code-block[data-lang="sh"]')?.textContent).toMatch(/^Terminal/);
+    const shell = document.querySelector('.code-block[data-lang="sh"]')?.textContent;
+    expect(shell).toMatch(/^Terminal/);
+    expect(shell).toContain('npm install @fedora-icons/react');
+    expect(shell).toContain('pnpm add @fedora-icons/react');
   });
 
   it('documents what the site stores in a Privacy section', () => {

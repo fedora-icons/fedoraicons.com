@@ -1,13 +1,16 @@
 # Deployment
 
-`npm run build` writes a static site to `dist/`. No server code is needed,
+`pnpm run build` writes a static site to `dist/`. No server code is needed,
 and the build doesn't need a fedora-icons checkout (the synced data is
-committed). Use Node 24 (`.nvmrc`, `engines`); dependencies install from the
-public npm registry (`.npmrc`).
+committed). Use Node 24 (`.nvmrc`, `engines`) and pnpm (`packageManager`); dependencies
+install from the public npm registry (`.npmrc`). `pnpm-workspace.yaml` allows
+esbuild's install script, which fetches Vite's native bundler binary.
 
 ## Vercel
 
-`vercel.json` holds the settings: Vite, `npm ci`, `npm run build`, output
+`vercel.json` holds the settings: Vite, install and build with the pinned pnpm
+(`npx pnpm@<version>`, so Vercel uses the same pnpm as `packageManager`; keep
+the two in step when upgrading), output
 `dist/`, clean URLs without trailing slashes (canonical links are `/docs`, not
 `/docs/`), immutable caching for hashed assets, short caching for artwork,
 no caching for `sw.js` and the manifest, and basic security headers.

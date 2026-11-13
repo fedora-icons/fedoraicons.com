@@ -46,6 +46,7 @@ const json = (value) => JSON.stringify(value, null, 2) + '\n';
 function parseArgs(argv) {
   const args = { check: false, source: null };
   for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === '--') continue; // `pnpm run sync -- --source …` passes the separator through
     if (argv[i] === '--check') args.check = true;
     else if (argv[i] === '--source') args.source = argv[++i];
     else throw new Error(`Unknown argument: ${argv[i]}`);
@@ -271,7 +272,7 @@ function main() {
     });
     if (stale.length) {
       console.error('Synchronized data is out of date:\n  ' + stale.map(([p]) => p).join('\n  '));
-      console.error('Run: npm run sync -- --source <path-to-fedora-icons>');
+      console.error('Run: pnpm run sync --source <path-to-fedora-icons>');
       process.exit(1);
     }
     console.log(`Synchronized data matches ${relative(ROOT, resolve(source)) || source}.`);
