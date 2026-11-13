@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { memo, useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 
 export interface GridItem {
@@ -180,10 +181,10 @@ export function IconGrid({ items: allItems, svgs, selected, onSelect, label, onN
 }
 
 export function GridHelp() {
+  const { t } = useI18n();
   return (
     <p id="grid-help" className="sr-only">
-      Use arrow keys to move between icons and Enter to open the inspector.
-      Shift plus Enter, or Shift-click, adds or removes an icon from a set you can download as a ZIP.
+      {t('icons.gridHelp')}
     </p>
   );
 }

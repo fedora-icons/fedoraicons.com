@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n';
+import { errorText, LocalizedError } from '../i18n/errors';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -11,7 +13,7 @@ import { useTheme } from '../lib/theme';
 import { CodeBlock } from './CodeBlock';
 import { ExportPanel } from './ExportPanel';
 import { ModifierPicker, useModifiers, type ModifierChoice } from './ModifierPicker';
-import { composeSvg, CORNER_LABELS, modifiersFor, type Corner } from '../lib/modifiers';
+import { composeSvg, modifiersFor, type Corner } from '../lib/modifiers';
 import { ColorField, CustomizeControls, Section } from './Customize';
 import { ThemeToggle } from './ThemeToggle';
 import { IconButton, Segmented, UiIcon, useToast } from './ui';
@@ -38,6 +40,8 @@ export function Inspector({
   icon, style, styles, source: librarySource, look, onLookChange, onStyleChange, onSelectIcon, onClose, kind = 'core', headingId,
 }: InspectorProps) {
   const toast = useToast();
+  const i18n = useI18n();
+  const { t, rich, label, path } = i18n;
   const { resolved: theme } = useTheme();
   const duo = isDuo(style);
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -53,9 +57,9 @@ export function Inspector({
     try {
       return { svg: composeSvg(librarySource, badge.modifier, badge.corner, style), error: null };
     } catch (e) {
-      return { svg: librarySource, error: e instanceof Error ? e.message : 'Could not compose this modifier.' };
+      return { svg: librarySource, error: errorText(e, i18n, 'error.compose') };
     }
-  }, [badge, librarySource, style]);
+  }, [badge, librarySource, style, i18n]);
   /** The artwork every preview and export uses: the library icon, plus any modifier being tried. */
   const source = composed.svg;
   const [busy, setBusy] = useState(false);
@@ -72,7 +76,7 @@ export function Inspector({
   }), [duo, r.duo.primary, r.duo.secondary, r.mono, showSecondary, showModifier, modifier, modifierDefault]);
 
   const build = (px: number, idPrefix?: string) => {
-    if (!source) throw new Error('Icon artwork is still loading.');
+    if (!source) throw new LocalizedError('error.loadingArtwork');
     return buildSvg(source, { ...colors, size: px, idPrefix, strokeWidth });
   };
 
@@ -129,7 +133,7 @@ export function Inspector({
       await action();
       toast('success', success);
     } catch (error) {
-      toast('error', error instanceof Error ? error.message : 'Something went wrong.');
+      toast('error', errorText(error, i18n));
     } finally {
       setBusy(false);
     }
@@ -151,17 +155,17 @@ export function Inspector({
         <div className="min-w-0 flex-1">
           <h2 id={headingId} tabIndex={-1} className="truncate text-xl font-semibold outline-none">{icon.name}</h2>
           <p className="mt-0.5 text-sm text-muted">
-            {icon.category}
-            {icon.composition && <> · Base <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(icon.composition!.base)}>{icon.composition.base}</button></>}
+            {label('category', icon.category, icon.category)}
+            {icon.composition && <> · {t('inspector.base')} <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(icon.composition!.base)}>{icon.composition.base}</button></>}
           </p>
         </div>
-        <IconButton icon="x" label="Clear selection" onClick={onClose} className="-mr-2 -mt-1" />
+        <IconButton icon="x" label={t('inspector.clear')} onClick={onClose} className="-mr-2 -mt-1" />
       </div>
 
       <div className="px-5 pb-2">
         <div className="checkerboard flex h-[200px] items-center justify-center rounded-2xl border border-line">
           {preview ? (
-            <span role="img" aria-label={`${icon.name}, ${STYLE_META[style].label}, scaled preview`} data-artwork className="glyph size-40" dangerouslySetInnerHTML={{ __html: preview.large }} />
+            <span role="img" aria-label={t('inspector.preview', { name: icon.name, style: t(`style.${style}`) })} data-artwork className="glyph size-40" dangerouslySetInnerHTML={{ __html: preview.large }} />
           ) : (
             <span className="size-40 animate-pulse rounded-2xl bg-sunken" />
           )}
@@ -179,24 +183,24 @@ export function Inspector({
             <span className="checkerboard flex size-10 items-center justify-center rounded-lg">
               {preview && <span data-artwork className="glyph size-6" dangerouslySetInnerHTML={{ __html: preview.native }} />}
             </span>
-            <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">24px</strong>Native master</figcaption>
+            <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{t('customize.pxValue', { value: 24 })}</strong>{t('inspector.native')}</figcaption>
           </figure>
           <figure className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
             <span className="checkerboard flex size-10 items-center justify-center overflow-hidden rounded-lg">
               {preview && <span data-artwork className="glyph" style={{ width: Math.min(size, 128), height: Math.min(size, 128) }} dangerouslySetInnerHTML={{ __html: preview.actual }} />}
             </span>
-            <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{size}px</strong>{size === 24 ? 'Selected size' : 'Scaled'}</figcaption>
+            <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{t('customize.pxValue', { value: size })}</strong>{size === 24 ? t('inspector.selectedSize') : t('inspector.scaled')}</figcaption>
           </figure>
         </div>
       </div>
 
       {kind === 'core' && (
-        <Section title="Modifier">
+        <Section title={t('inspector.modifier')}>
           {icon.composition ? (
             <p className="text-sm leading-relaxed text-muted">
-              A library icon: {compositionLabel(icon.composition)}.{' '}
+              {t('inspector.libraryIcon', { composition: compositionLabel(icon.composition) })}{' '}
               <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(icon.composition!.base)}>
-                Try other modifiers on {icon.composition.base}
+                {t('inspector.tryOthers', { base: icon.composition.base })}
               </button>
             </p>
           ) : modifiers.error ? (
@@ -211,31 +215,32 @@ export function Inspector({
                   <p className="text-danger">{composed.error}</p>
                 ) : badge && authoredMatch ? (
                   <p>
-                    The library has a designed version of this combination:{' '}
-                    <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(authoredMatch)}>{authoredMatch}</button>.
+                    {rich('inspector.authoredMatch', {
+                      link: (text) => <button type="button" className="text-brand underline underline-offset-2" onClick={() => onSelectIcon(authoredMatch)}>{text}</button>,
+                    }, { name: authoredMatch })}
                   </p>
                 ) : badge ? (
                   <p>
-                    Preview, not a library icon: {badge.modifier.label} sits {CORNER_LABELS[badge.corner].toLowerCase()} on the unchanged icon and may cover detail. Downloads and copies include it.
-                    {authored.map.size > 0 && ' Dotted modifiers have a designed library version.'}
+                    {t('inspector.previewNote', { modifier: label('modifier', badge.modifier.name, badge.modifier.label), corner: t(`corner.${badge.corner}.inline`) })}
+                    {authored.map.size > 0 && t('inspector.dotted')}
                   </p>
                 ) : (
                   <p>
-                    Pick a modifier to preview it on this icon, then choose its corner.
-                    {authored.map.size > 0 && ' Dotted modifiers have a designed library version.'}
+                    {t('inspector.pickModifier')}
+                    {authored.map.size > 0 && t('inspector.dotted')}
                   </p>
                 )}
               </div>
               {family && (
                 <div className="mt-3">
-                  <label htmlFor={`${uid}-mod`} className="mb-1 block text-xs text-muted">Library versions</label>
+                  <label htmlFor={`${uid}-mod`} className="mb-1 block text-xs text-muted">{t('inspector.libraryVersions')}</label>
                   <select
                     id={`${uid}-mod`}
                     value=""
                     onChange={(e) => e.target.value && onSelectIcon(e.target.value)}
                     className="h-9 w-full rounded-lg border border-line-strong bg-surface px-2 text-sm"
                   >
-                    <option value="">Open a library version…</option>
+                    <option value="">{t('inspector.openVersion')}</option>
                     {family.variants.map((v) => (
                       <option key={v.name} value={v.name}>{compositionLabel(v.composition!)} — {v.name}</option>
                     ))}
@@ -247,13 +252,13 @@ export function Inspector({
         </Section>
       )}
 
-      <Section title="Style">
+      <Section title={t('inspector.style')}>
         <Segmented
-          label="Icon style"
+          label={t('icons.styleSwitcher')}
           size="sm"
           value={style}
           onChange={onStyleChange}
-          options={styles.map((s) => ({ value: s, label: STYLE_META[s].label, title: STYLE_META[s].description }))}
+          options={styles.map((s) => ({ value: s, label: t(`style.${s}`), title: t(`style.${s}.description`) }))}
         />
       </Section>
 
@@ -264,21 +269,21 @@ export function Inspector({
         kind={kind}
         strokeFootnote={filledParts && strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (
           <p className="mt-2 rounded-lg bg-sunken px-2.5 py-2 text-xs leading-relaxed text-muted">
-            Parts of this icon are drawn as filled shapes, so they keep their drawn weight while its lines change.
+            {t('inspector.filledParts')}
           </p>
         )}
         footnote={(
           <>
             {style === 'duocolor' && !showSecondary && (
-              <p className="text-xs leading-relaxed text-faint">This icon is a single contour, so it is primary-only by design.</p>
+              <p className="text-xs leading-relaxed text-faint">{t('inspector.singleContour')}</p>
             )}
             {showModifier && (
               <div className="mt-3">
                 <ColorField
-                  label="Modifier glyph"
+                  label={t('inspector.modifierGlyph')}
                   value={modifier ?? modifierDefault ?? '#000000'}
                   onChange={setModifier}
-                  hint={modifierDefault ? `Library default ${modifierDefault}` : undefined}
+                  hint={modifierDefault ? t('inspector.libraryDefault', { color: modifierDefault }) : undefined}
                 />
               </div>
             )}
@@ -299,20 +304,23 @@ export function Inspector({
         <Section
           collapsible
           defaultOpen={false}
-          title="React"
+          title={t('inspector.react')}
           aside={(
-            <button type="button" className="text-xs font-medium text-brand hover:underline" onClick={() => run(() => copyText(snippet), 'React example copied')}>
-              Copy
+            <button type="button" className="text-xs font-medium text-brand hover:underline" onClick={() => run(() => copyText(snippet), t('inspector.reactCopied'))}>
+              {t('inspector.copy')}
             </button>
           )}
         >
           <CodeBlock code={snippet} lang="tsx" />
           <p className="mt-2 text-xs leading-relaxed text-faint">
             {strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (
-              <><strong className="font-medium text-ink">The React package draws the standard {BASE_STROKE}px stroke at every size</strong>; use Download SVG to keep this {strokeWidth}px stroke. </>
+              rich('inspector.reactStroke', { strong: (text) => <strong className="font-medium text-ink">{text}</strong> }, { base: BASE_STROKE, value: strokeWidth })
             )}
-            {badge && <><strong className="font-medium text-ink">The React package has no component for {icon.name} with {badge.modifier.label}</strong>; this example shows the plain icon. Use Download SVG to keep the modifier. </>}
-            Install with <code className="font-mono text-ink">npm install @fedora-icons/react</code>. <a className="text-brand underline underline-offset-2" href="/docs#react">React docs</a>.
+            {badge && rich('inspector.reactModifier', { strong: (text) => <strong className="font-medium text-ink">{text}</strong> }, { name: icon.name, modifier: label('modifier', badge.modifier.name, badge.modifier.label) })}
+            {rich('inspector.reactInstall', {
+              code: (text) => <code className="font-mono text-ink">{text}</code>,
+              link: (text) => <a className="text-brand underline underline-offset-2" href={path('/docs#react')}>{text}</a>,
+            })}
           </p>
         </Section>
       )}
@@ -342,6 +350,7 @@ export function SidePane({
   children: ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -359,7 +368,7 @@ export function SidePane({
     if (!host) return null;
     return createPortal(
       <aside
-        aria-label="Icon panel"
+        aria-label={t('pane.label')}
         onKeyDown={(e) => { if (e.key === 'Escape' && !collapsed) { e.stopPropagation(); onDismiss(); } }}
         className={`sticky top-0 flex h-dvh shrink-0 flex-col overflow-hidden border-l border-line bg-surface transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           collapsed ? 'w-14' : 'w-[380px]'
@@ -368,7 +377,7 @@ export function SidePane({
         <div className={`flex h-[57px] shrink-0 items-center border-b border-line px-2.5 ${collapsed ? 'justify-center' : ''}`}>
           <IconButton
             icon="layout-sidebar-right"
-            label={collapsed ? 'Expand panel' : 'Collapse panel'}
+            label={collapsed ? t('pane.expand') : t('pane.collapse')}
             aria-expanded={!collapsed}
             aria-controls="side-pane-body"
             onClick={() => onCollapsedChange(!collapsed)}
@@ -382,8 +391,8 @@ export function SidePane({
               className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-ink transition hover:bg-sunken"
             >
               <UiIcon name="message-smile-square" className="size-5" />
-              Feedback
-              <span className="sr-only"> (opens GitHub in a new tab)</span>
+              {t('pane.feedback')}
+              <span className="sr-only">{t('pane.feedbackNewTab')}</span>
             </a>
           )}
         </div>

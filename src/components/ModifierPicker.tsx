@@ -1,6 +1,8 @@
+import { useI18n } from '../i18n';
+import { errorText } from '../i18n/errors';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-  CORNER_LABELS, CORNERS, initialCorner, loadModifiers, MODIFIER_GROUPS, modifierTileSvg,
+  CORNERS, initialCorner, loadModifiers, MODIFIER_GROUPS, modifierTileSvg,
   type Corner, type ModifierAsset,
 } from '../lib/modifiers';
 
@@ -11,16 +13,17 @@ export interface ModifierChoice {
 
 /** Load the library's modifiers once the picker is shown. */
 export function useModifiers(enabled: boolean) {
+  const i18n = useI18n();
   const [state, setState] = useState<{ list: ModifierAsset[] | null; error: string | null }>({ list: null, error: null });
   useEffect(() => {
     if (!enabled) return;
     let live = true;
     loadModifiers().then(
       (list) => { if (live) setState({ list, error: null }); },
-      (e: unknown) => { if (live) setState({ list: null, error: e instanceof Error ? e.message : 'Could not load modifiers.' }); },
+      (e: unknown) => { if (live) setState({ list: null, error: errorText(e, i18n, 'error.loadModifiers') }); },
     );
     return () => { live = false; };
-  }, [enabled]);
+  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps -- the message language is fixed per page load
   return state;
 }
 
@@ -36,13 +39,14 @@ export function ModifierPicker({
   authored: Map<string, Set<Corner>>;
 }) {
   const cornerLabel = useId();
+  const { t, label } = useI18n();
   const baseId = useId();
   const tiles = useMemo(() => new Map(modifiers.map((m) => [m.name, modifierTileSvg(m)])), [modifiers]);
-  const groups = MODIFIER_GROUPS
-    .map((g) => ({ ...g, items: modifiers.filter((m) => m.group === g.id) }))
+  const groups: { id: string; label: string; tab: string; items: ModifierAsset[] }[] = MODIFIER_GROUPS
+    .map((g) => ({ ...g, label: t(`modifiers.group.${g.id}`), tab: t(`modifiers.group.${g.id}.tab`), items: modifiers.filter((m) => m.group === g.id) }))
     .filter((g) => g.items.length);
   const ungrouped = modifiers.filter((m) => !MODIFIER_GROUPS.some((g) => g.id === m.group));
-  if (ungrouped.length) groups.push({ id: 'other', label: 'Other', tab: 'Other', items: ungrouped });
+  if (ungrouped.length) groups.push({ id: 'other', label: t('modifiers.group.other'), tab: t('modifiers.group.other.tab'), items: ungrouped });
   const [tab, setTab] = useState(() => groups.find((g) => g.items.some((m) => m.name === value?.modifier.name))?.id ?? groups[0]?.id);
   const current = groups.find((g) => g.id === tab) ?? groups[0];
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -72,10 +76,10 @@ export function ModifierPicker({
             !value ? 'border-ink bg-ink text-canvas' : 'border-line-strong hover:bg-sunken'
           }`}
         >
-          None
+          {t('modifiers.none')}
         </button>
         <div className="flex items-center gap-2">
-          <span id={cornerLabel} className="text-xs text-muted">Corner</span>
+          <span id={cornerLabel} className="text-xs text-muted">{t('modifiers.corner')}</span>
           <div role="group" aria-labelledby={cornerLabel} className="grid grid-cols-2 gap-1">
             {CORNERS.map((corner) => {
               const allowed = !!value?.modifier.positions[corner];
@@ -85,8 +89,11 @@ export function ModifierPicker({
                 <button
                   key={corner}
                   type="button"
-                  aria-label={CORNER_LABELS[corner]}
-                  title={allowed || !value ? CORNER_LABELS[corner] : `${value.modifier.label} only sits ${Object.keys(value.modifier.positions).map((c) => CORNER_LABELS[c as Corner].toLowerCase()).join(', ')}`}
+                  aria-label={t(`corner.${corner}`)}
+                  title={allowed || !value ? t(`corner.${corner}`) : t('modifiers.onlySits', {
+                    modifier: label('modifier', value.modifier.name, value.modifier.label),
+                    corners: (Object.keys(value.modifier.positions) as Corner[]).map((c) => t(`corner.${c}.inline`)).join(', '),
+                  })}
                   aria-pressed={active}
                   disabled={!allowed}
                   onClick={() => value && onChange({ ...value, corner })}
@@ -105,7 +112,7 @@ export function ModifierPicker({
       </div>
 
       <div>
-        <div role="tablist" aria-label="Modifier categories" className="flex gap-1 border-b border-line">
+        <div role="tablist" aria-label={t('modifiers.categories')} className="flex gap-1 border-b border-line">
           {groups.map((group, i) => {
             const selected = group.id === current.id;
             const holdsChoice = group.items.some((m) => m.name === value?.modifier.name);
@@ -146,8 +153,8 @@ export function ModifierPicker({
                 <button
                   type="button"
                   aria-pressed={active}
-                  aria-label={`${m.label} modifier${hasAuthored ? ', has a library version' : ''}`}
-                  title={m.label}
+                  aria-label={t(hasAuthored ? 'modifiers.tileAuthored' : 'modifiers.tile', { label: label('modifier', m.name, m.label) })}
+                  title={label('modifier', m.name, m.label)}
                   onClick={() => pick(m)}
                   className={`${tile} ${active ? 'border-brand bg-brand-soft' : 'border-transparent bg-sunken hover:border-line-strong'}`}
                 >

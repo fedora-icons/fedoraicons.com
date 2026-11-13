@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/errors';
 import type { StyleId } from './catalog';
 import { isDuo } from './svg';
 
@@ -30,13 +31,14 @@ export interface ModifierAsset {
   svg: string;
 }
 
-export const MODIFIER_GROUPS: { id: string; label: string; tab: string }[] = [
-  { id: 'actions', label: 'Actions', tab: 'Actions' },
-  { id: 'status', label: 'Status', tab: 'Status' },
-  { id: 'access-identity', label: 'Access & identity', tab: 'Access' },
-  { id: 'image-quality', label: 'Image quality', tab: 'Quality' },
-  { id: 'file-types', label: 'File types', tab: 'Files' },
-];
+/** Library modifier groups, in tab order. Labels are messages: modifiers.group.<id>(.tab). */
+export const MODIFIER_GROUPS = [
+  { id: 'actions' },
+  { id: 'status' },
+  { id: 'access-identity' },
+  { id: 'image-quality' },
+  { id: 'file-types' },
+] as const;
 
 /**
  * Some modifier groups only make sense on certain icons: file-type labels on
@@ -69,7 +71,7 @@ let cache: Promise<ModifierAsset[]> | null = null;
 
 export function loadModifiers(): Promise<ModifierAsset[]> {
   cache ??= fetch(`${import.meta.env.BASE_URL}modifiers.json`).then((res) => {
-    if (!res.ok) throw new Error(`Could not load modifiers (${res.status})`);
+    if (!res.ok) throw new LocalizedError('error.loadModifiersStatus', { status: String(res.status) });
     return res.json() as Promise<{ modifiers: ModifierAsset[] }>;
   }).then((data) => data.modifiers).catch((error: unknown) => {
     cache = null;
@@ -164,7 +166,7 @@ export function modifierTileSvg(modifier: ModifierAsset): string {
  */
 export function composeSvg(base: string, modifier: ModifierAsset, corner: Corner, style: StyleId): string {
   const placement = modifier.positions[corner];
-  if (!placement) throw new Error(`${modifier.label} can't sit in the ${CORNER_LABELS[corner].toLowerCase()} corner`);
+  if (!placement) throw new LocalizedError('error.badCorner', { modifier: modifier.label, corner: CORNER_LABELS[corner].toLowerCase() });
   const prefix = `fm-${modifier.name}-${corner}`;
   const doc = document.implementation.createDocument(SVG_NS, 'svg', null);
   const result = doc.documentElement;

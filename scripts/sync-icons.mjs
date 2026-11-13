@@ -25,7 +25,7 @@ export const UI_ICONS = [
   'book-open', 'palette', 'arrow-left', 'filter', 'x-circle',
   'layout-sidebar-right', 'settings-sliders', 'undo', 'message-smile-square',
   'plus', 'minus', 'dots-horizontal', 'compass', 'binoculars', 'map', 'route', 'home',
-  'sparkles', 'lightbulb', 'arrow-right', 'search-sparkles',
+  'sparkles', 'lightbulb', 'arrow-right', 'search-sparkles', 'globe',
 ];
 
 /** Brand names and search aliases where the file path alone isn't the familiar name. */

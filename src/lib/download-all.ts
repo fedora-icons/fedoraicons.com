@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/errors';
 import { catalog, loadStyle, lock, STYLE_META } from './catalog';
 import { buildZip, type ZipEntry } from './zip';
 
@@ -13,7 +14,7 @@ export async function buildFullSet(): Promise<Blob> {
   const [maps, license] = await Promise.all([
     Promise.all(catalog.styles.map(loadStyle)),
     fetch(`${import.meta.env.BASE_URL}licenses/fedora-icons-LICENSE.txt`).then((res) => {
-      if (!res.ok) throw new Error(`Could not load the license (${res.status})`);
+      if (!res.ok) throw new LocalizedError('error.loadLicense', { status: String(res.status) });
       return res.text();
     }),
   ]);

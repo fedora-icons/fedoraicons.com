@@ -1,3 +1,5 @@
+import { UiIcon } from '../components/ui';
+import { DEFAULT_LOCALE, useI18n } from '../i18n';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { catalog, lock, palettes, STYLE_META } from '../lib/catalog';
@@ -115,6 +117,9 @@ export default function DocsPage() {
     arrived.current = true;
   }, [hash]);
   const [active, setActive] = useActiveSection();
+  // Other languages show this English page until a translation exists (see src/i18n/content.ts).
+  const { t, config, path } = useI18n();
+  const english = config.code !== DEFAULT_LOCALE;
 
   return (
     <div className={`docs-page ${CONTAINER} flex gap-12 pb-20 pt-8 sm:pt-12`}>
@@ -138,7 +143,12 @@ export default function DocsPage() {
         </ul>
       </nav>
 
-      <article className="min-w-0 max-w-[720px] flex-1 space-y-10">
+      <article lang={english ? 'en' : undefined} className="min-w-0 max-w-[720px] flex-1 space-y-10">
+        {english && (
+          <p lang={config.code} className="inline-flex items-center gap-2 rounded-lg bg-sunken px-3 py-1.5 text-sm text-muted">
+            <UiIcon name="globe" className="size-4" /> {t('docs.englishOnly')}
+          </p>
+        )}
         <header>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Documentation</h1>
           <p className="mt-3 text-base text-muted">
@@ -224,7 +234,7 @@ export default function DocsPage() {
 
         <Section id="modifiers" title="Modifiers">
           <p>Modifiers combine a base icon with a small solid glyph — Add, Delete, Lock, file-type labels, and more — with a designed corner position and a transparent clearance gap so the glyph never touches the base.</p>
-          <p>The library currently includes <strong>{compositions.length} authored compositions</strong> across {new Set(compositions.map((c) => c.composition!.base)).size} base icons, using {modifierNames.size} modifiers. In the inspector, open a base icon such as <a href="/?icon=user">user</a> or <a href="/?icon=file">file</a> and choose from the <strong>Modifier</strong> menu.</p>
+          <p>The library currently includes <strong>{compositions.length} authored compositions</strong> across {new Set(compositions.map((c) => c.composition!.base)).size} base icons, using {modifierNames.size} modifiers. In the inspector, open a base icon such as <a href={path('/?icon=user')}>user</a> or <a href={path('/?icon=file')}>file</a> and choose from the <strong>Modifier</strong> menu.</p>
           <p>The website offers only these authored compositions. It does not generate arbitrary base-and-glyph combinations, because automatic conflict handling has not been designed yet. For other combinations, the library&apos;s Python composer supports the four corners with real clearance:</p>
           <Code lang="sh">{`python3 scripts/compose_svg.py home-smile --modifier key --position bottom-right --output home-key.svg`}</Code>
         </Section>

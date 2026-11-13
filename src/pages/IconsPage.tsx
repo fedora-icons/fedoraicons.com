@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n';
+import { errorText } from '../i18n/errors';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CustomizePanel } from '../components/Customize';
@@ -6,8 +8,8 @@ import { Inspector, SidePane } from '../components/Inspector';
 import { NoResults } from '../components/NoResults';
 import { SelectionPanel } from '../components/SelectionPanel';
 import { Button, Segmented, UiIcon } from '../components/ui';
-import { availableBrandStyles, brandCategories, brandEntries, brands, hasBrandStyle, loadBrands } from '../lib/brands';
-import { catalog, chunksFor, iconsByName, loadIconChunk, loadStyle, STYLE_META, type StyleId } from '../lib/catalog';
+import { availableBrandStyles, brandCategories, brandEntries, hasBrandStyle, loadBrands } from '../lib/brands';
+import { catalog, chunksFor, iconsByName, loadIconChunk, loadStyle, type StyleId } from '../lib/catalog';
 import { CONTAINER, usePaneHost } from '../lib/layout';
 import { DEFAULT_LOOK, gridVars, type Look } from '../lib/look';
 import { createIndex, search, suggest } from '../lib/search';
@@ -25,29 +27,11 @@ const config: UrlStateConfig = {
   core: { categories: catalog.categories.map((c) => c.name), icons: new Set(iconsByName.keys()) },
   brands: { categories: brandCategories.map((c) => c.name), icons: new Set(brandsByName.keys()) },
 };
-const VIEW_OPTIONS: { value: View; label: string; title?: string }[] = [
-  ...catalog.styles.map((s) => ({ value: s as View, label: STYLE_META[s].label, title: STYLE_META[s].description })),
-  { value: 'brands', label: 'Brands', title: 'Third-party brand marks, shown as provided' },
-];
-const nf = new Intl.NumberFormat('en-US');
 const COLLAPSE_KEY = 'fedora-pane-collapsed';
 
 /** Search ghost text: the prompt first, then rotating tips for every trick. */
-const DESKTOP_TIPS = [
-  `Search ${nf.format(catalog.icons.length)} icons by name or category`,
-  'Tip: Shift-click icons to select several, then download them as a ZIP',
-  'Tip: press / anywhere to jump to search',
-  'Tip: arrow keys move through the grid, Enter opens an icon',
-  'Tip: size, stroke, and color in the right pane apply to every icon',
-  'Tip: Esc clears the search, or closes the selected icon',
-  'Tip: copy the page URL to share your search, style, and icon',
-];
-const MOBILE_TIPS = [
-  `Search ${nf.format(catalog.icons.length)} icons`,
-  'Tip: tap Customize for size, stroke, and color',
-  'Tip: choose a category to narrow the grid',
-  'Tip: share the URL to share your search and style',
-];
+const DESKTOP_TIPS = ['icons.tip.multi', 'icons.tip.slash', 'icons.tip.arrows', 'icons.tip.pane', 'icons.tip.esc', 'icons.tip.share'] as const;
+const MOBILE_TIPS = ['icons.tip.customize', 'icons.tip.category', 'icons.tip.shareShort'] as const;
 
 /** Focus the search box with "/" unless the user is typing somewhere. */
 export function useSlashToFocus(ref: React.RefObject<HTMLInputElement | null>) {
@@ -88,6 +72,7 @@ export function SearchField({
   value, onChange, inputRef, tips, label,
 }: { value: string; onChange: (v: string) => void; inputRef: React.RefObject<HTMLInputElement | null>; tips: string[]; label: string }) {
   const [focused, setFocused] = useState(false);
+  const { t } = useI18n();
   const { tip, index } = useRotatingTip(tips, focused || !!value);
   return (
     <div className="relative">
@@ -117,7 +102,7 @@ export function SearchField({
       )}
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
         {value ? (
-          <button type="button" aria-label="Clear search" onClick={() => { onChange(''); inputRef.current?.focus(); }} className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-sunken hover:text-ink">
+          <button type="button" aria-label={t('icons.clearSearch')} onClick={() => { onChange(''); inputRef.current?.focus(); }} className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-sunken hover:text-ink">
             <UiIcon name="x" className="size-[18px]" />
           </button>
         ) : (
@@ -133,26 +118,27 @@ function readCollapsed() {
 }
 
 function BrandsEmpty() {
+  const { t, path } = useI18n();
   return (
     <section aria-labelledby="brands-empty" className="rounded-2xl border border-dashed border-line-strong px-6 py-14 text-center">
-      <h2 id="brands-empty" className="text-lg font-semibold">No brand icons are available yet</h2>
+      <h2 id="brands-empty" className="text-lg font-semibold">{t('brands.emptyTitle')}</h2>
       <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted">
-        Brand artwork is published here only after its official source and redistribution
-        terms are confirmed. Earlier reference drawings in the Figma file are not approved
-        for distribution, so none are shown or offered for download.
+        {t('brands.emptyBody')}
       </p>
       <p className="mt-5 text-sm">
         <a className="text-brand underline underline-offset-2" href="https://github.com/fedora-icons/fedora-icons/blob/main/BRANDS.md">
-          Read the brand policy
+          {t('brands.policy')}
         </a>
         <span className="mx-2 text-faint">·</span>
-        <a className="text-brand underline underline-offset-2" href="/docs#licensing">Licensing</a>
+        <a className="text-brand underline underline-offset-2" href={path('/docs#licensing')}>{t('brands.licensing')}</a>
       </p>
     </section>
   );
 }
 
 export function IconsPage() {
+  const i18n = useI18n();
+  const { t, rich, label, list } = i18n;
   const [params, setParams] = useSearchParams();
   const state = useMemo(() => parseState(params.toString(), config), [params]);
   const [svgs, setSvgs] = useState<Record<string, Record<string, string>>>({});
@@ -210,9 +196,9 @@ export function IconsPage() {
           mergedChunks.current.add(key);
           setSvgs((s) => ({ ...s, [drawStyle]: { ...s[drawStyle], ...data } }));
         })
-        .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load icons.'));
+        .catch((e: unknown) => setError(errorText(e, i18n, 'icons.loadError')));
     }
-  }, [lazyArtwork, drawStyle, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- a retry re-asks for what's in view
+  }, [lazyArtwork, drawStyle, attempt, i18n]); // eslint-disable-line react-hooks/exhaustive-deps -- a retry re-asks for what's in view
 
   useEffect(() => {
     if (lazyArtwork || (brandsView && brandEntries.length === 0)) return;
@@ -220,9 +206,9 @@ export function IconsPage() {
     setError(null);
     (brandsView ? loadBrands(brandStyle) : loadStyle(drawStyle))
       .then((data) => { if (!cancelled) setSvgs((s) => ({ ...s, [svgKey]: data })); })
-      .catch((e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load icons.'); });
+      .catch((e: unknown) => { if (!cancelled) setError(errorText(e, i18n, 'icons.loadError')); });
     return () => { cancelled = true; };
-  }, [lazyArtwork, brandsView, brandStyle, drawStyle, svgKey, attempt]);
+  }, [lazyArtwork, brandsView, brandStyle, drawStyle, svgKey, attempt, i18n]);
 
   // A retry clears the failed chunks so the grid asks for them again.
   useEffect(() => { if (attempt) setError(null); }, [attempt]);
@@ -299,28 +285,38 @@ export function IconsPage() {
   }, [state.icon, update]);
 
   const categories = brandsView ? brandCategories : catalog.categories;
-  const noun = brandsView ? ['brand', 'brands'] : ['icon', 'icons'];
-  const summary = state.q || state.category
-    ? `${nf.format(results.length)} ${results.length === 1 ? noun[0] : noun[1]}${state.q ? ` for “${state.q.trim()}”` : ''}${state.category ? ` in ${state.category}` : ''}`
-    : `${nf.format(results.length)} ${noun[1]}`;
+  const counted = t(brandsView ? 'icons.brandCount' : 'icons.count', { count: results.length });
+  const query = state.q.trim();
+  const categoryName = state.category ? label('category', state.category, state.category) : '';
+  const summary = query && categoryName ? t('icons.summaryForIn', { results: counted, query, category: categoryName })
+    : query ? t('icons.summaryFor', { results: counted, query })
+      : categoryName ? t('icons.summaryIn', { results: counted, category: categoryName })
+        : counted;
+  const viewOptions: { value: View; label: string; title?: string }[] = [
+    ...catalog.styles.map((s) => ({ value: s as View, label: t(`style.${s}`), title: t(`style.${s}.description`) })),
+    { value: 'brands', label: t('style.brands'), title: t('style.brands.description') },
+  ];
+  const tips = brandsView
+    ? [t('icons.searchBrands')]
+    : [t(desktop ? 'icons.tip.search' : 'icons.tip.searchShort', { count: catalog.icons.length }), ...(desktop ? DESKTOP_TIPS : MOBILE_TIPS).map((k) => t(k))];
   const total = catalog.icons.length;
 
   return (
     <div className={`${CONTAINER} pb-16 pt-8 sm:pt-12`}>
       <div className="mb-5 max-w-2xl">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the <span className="text-brand">right</span> icon, then ship it.</h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          {rich('icons.headline', { em: (text) => <span className="text-brand">{text}</span> })}
+        </h1>
         <p className="mt-2 text-base text-muted">
-          {nf.format(total)} open-source icons with soft, rounded line work, drawn in{' '}
-          {new Intl.ListFormat('en', { type: 'conjunction' }).format(catalog.styles.map((s) => STYLE_META[s].label))}.
-          Set the size, stroke weight, and colors once, and every icon and download follows.
+          {t('icons.intro', { count: total, styles: list(catalog.styles.map((s) => t(`style.${s}`))) })}
         </p>
       </div>
 
       <div className="sticky top-0 z-20 -mx-4 bg-canvas/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-canvas/75 sm:-mx-6 sm:px-6">
         <SearchField
           inputRef={searchRef}
-          label={brandsView ? 'Search brands' : 'Search icons'}
-          tips={brandsView ? ['Search brands'] : desktop ? DESKTOP_TIPS : MOBILE_TIPS}
+          label={brandsView ? t('icons.searchBrands') : t('icons.searchIcons')}
+          tips={tips}
           value={state.q}
           onChange={(q) => update({ q }, true)}
         />
@@ -329,7 +325,7 @@ export function IconsPage() {
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <Segmented
           fill
-          label="Icon style"
+          label={t('icons.styleSwitcher')}
           value={state.style}
           onChange={(style) => {
             if ((style === 'brands') === brandsView) {
@@ -340,14 +336,14 @@ export function IconsPage() {
             setMulti([]);
             update({ style, category: null, icon: null });
           }}
-          options={VIEW_OPTIONS}
+          options={viewOptions}
         />
         {brandsView && availableBrandStyles.length > 1 && (
           <Segmented
-            label="Brand style"
+            label={t('icons.brandStyle')}
             value={brandStyle}
             onChange={(brandStyle) => update({ brandStyle })}
-            options={availableBrandStyles.map((s) => ({ value: s, label: STYLE_META[s].label }))}
+            options={availableBrandStyles.map((s) => ({ value: s, label: t(`style.${s}`) }))}
           />
         )}
         {(!brandsView || brandEntries.length > 0) && (
@@ -355,20 +351,20 @@ export function IconsPage() {
         )}
         <div className="ml-auto flex items-center gap-3">
           {!desktop && (
-            <Button icon="settings-sliders" onClick={() => setCustomizeOpen(true)}>Customize</Button>
+            <Button icon="settings-sliders" onClick={() => setCustomizeOpen(true)}>{t('icons.customize')}</Button>
           )}
           {(!brandsView || brandEntries.length > 0) && (
             <div className="relative">
-              <label htmlFor="category" className="sr-only">Category</label>
+              <label htmlFor="category" className="sr-only">{t('icons.category')}</label>
               <select
                 id="category"
                 value={state.category ?? ''}
                 onChange={(e) => update({ category: e.target.value || null })}
                 className="h-9 appearance-none rounded-lg border border-line-strong bg-surface pl-3 pr-9 text-sm font-medium text-ink"
               >
-                <option value="">All categories</option>
+                <option value="">{t('icons.allCategories')}</option>
                 {categories.map((c) => (
-                  <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
+                  <option key={c.name} value={c.name}>{t('icons.categoryOption', { name: label('category', c.name, c.name), count: c.count })}</option>
                 ))}
               </select>
               <UiIcon name="chevron-down" className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
@@ -380,7 +376,7 @@ export function IconsPage() {
       {brandsView && (
         <p className="mt-4 inline-flex items-center gap-2 rounded-lg bg-sunken px-3 py-1.5 text-sm font-medium text-ink">
           <UiIcon name="info-circle" className="size-4 text-muted" />
-          {brands.disclaimer}
+          {t('icons.brandDisclaimer')}
         </p>
       )}
 
@@ -391,12 +387,12 @@ export function IconsPage() {
         ) : error ? (
           <div role="alert" className="rounded-2xl border border-line bg-surface p-8 text-center">
             <p className="font-medium">{error}</p>
-            <Button className="mt-4" onClick={() => setAttempt((a) => a + 1)}>Try again</Button>
+            <Button className="mt-4" onClick={() => setAttempt((a) => a + 1)}>{t('icons.tryAgain')}</Button>
           </div>
         ) : results.length ? (
           <div style={gridVars(look, drawStyle, theme, kind) as CSSProperties}>
             <IconGrid
-              label={brandsView ? 'Brand icons' : `${STYLE_META[drawStyle].label} icons`}
+              label={brandsView ? t('icons.brandGridLabel') : t('icons.gridLabel', { style: t(`style.${drawStyle}`) })}
               items={results}
               svgs={gridSvgs}
               selected={selectedSet}
@@ -408,7 +404,7 @@ export function IconsPage() {
           <NoResults
             query={state.q}
             category={state.category}
-            noun={noun[1]}
+            noun={t(brandsView ? 'noResults.nounBrands' : 'noResults.nounIcons')}
             brandsView={brandsView}
             suggestions={suggestions}
             svgs={gridSvgs}

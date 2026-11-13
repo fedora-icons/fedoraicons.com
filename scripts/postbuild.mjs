@@ -1,6 +1,6 @@
 // Turn the single-page build into crawlable static pages.
 //
-// Every route gets its own index.html with its real content prerendered
+// Every route, in every language (src/i18n/config.ts), gets its own index.html with its real content prerendered
 // (so search engines and AI crawlers that don't run JavaScript can read it),
 // plus its own title, description, canonical link, Open Graph/Twitter share
 // tags, and JSON-LD. 404.html serves the app for unknown paths. Also writes
@@ -14,21 +14,16 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
 const ssrDir = join(root, 'dist-ssr');
 const server = await import(pathToFileURL(join(ssrDir, 'entry-server.js')).href);
-const { PAGES, headTags, facts, absolute, catalog, brands, SITE_NAME, LIBRARY_URL, FIGMA_URL } = server;
+const {
+  PAGES, PAGE_IDS, pageMeta, pageUrl, headTags, facts, absolute, catalog, brands,
+  SITE_NAME, LIBRARY_URL, FIGMA_URL, LOCALES, DEFAULT_LOCALE, localizePath, i18nFor,
+} = server;
 
 const template = readFileSync(join(dist, 'index.html'), 'utf8');
 const META = /<!-- page-meta:start[^>]*-->[\s\S]*?<!-- page-meta:end -->/;
 const ROOT = '<div id="root"></div>';
+const HTML_TAG = /<html[^>]*>/;
 if (!META.test(template) || !template.includes(ROOT)) throw new Error('index.html is missing the page-meta markers or #root');
-
-// file in dist/ -> [page, location to render]
-const routes = [
-  ['index.html', PAGES.home, '/'],
-  ['docs/index.html', PAGES.docs, '/docs'],
-  ['pricing/index.html', PAGES.pricing, '/pricing'],
-  ['brands/index.html', PAGES.brands, '/?style=brands'],
-  ['404.html', PAGES['not-found'], '/404'],
-];
 
 // Fetch the Latin text fonts with the HTML instead of after the CSS parses.
 const assets = readdirSync(join(dist, 'assets'));
@@ -40,22 +35,45 @@ const fontPreloads = ['funnel-display-latin-wght-normal', 'asta-sans-latin-wght-
 // The home grid's first artwork chunk, so icons paint without waiting for the app.
 const homePreloads = [`<link rel="preload" href="/icons/${catalog.styles[0]}/0.json" as="fetch" crossorigin />`];
 
-for (const [file, page, location] of routes) {
-  const body = await server.render(location);
-  const preloads = [...fontPreloads, ...(page.id === 'home' ? homePreloads : [])];
+async function writePage(file, id, location, locale) {
+  const i18n = await i18nFor(locale);
+  const body = await server.render(localizePath(location, locale), locale);
+  const preloads = [...fontPreloads, ...(id === 'home' ? homePreloads : [])];
   const html = template
-    .replace(META, [headTags(page), ...preloads].join('\n    '))
+    .replace(HTML_TAG, `<html lang="${i18n.config.code}" dir="${i18n.dir}">`)
+    .replace(META, [headTags(pageMeta(id, i18n), i18n), ...preloads].join('\n    '))
     .replace(ROOT, `<div id="root">${body}</div>`);
   mkdirSync(dirname(join(dist, file)), { recursive: true });
   writeFileSync(join(dist, file), html);
 }
 
-const indexed = routes.map(([, page]) => page).filter((page) => !page.noindex);
+// Every page in every language. Non-default languages live under /<locale>/;
+// one 404.html serves every language (the app reads the language from the URL).
+const ROUTES = [['home', '/'], ['docs', '/docs'], ['pricing', '/pricing'], ['brands', '/?style=brands']];
+let written = 0;
+for (const { code } of LOCALES) {
+  const prefix = code === DEFAULT_LOCALE ? '' : `${code}/`;
+  for (const [id, location] of ROUTES) {
+    await writePage(`${prefix}${id === 'home' ? '' : `${id}/`}index.html`, id, location, code);
+    written += 1;
+  }
+}
+await writePage('404.html', 'not-found', '/404', DEFAULT_LOCALE);
+written += 1;
 
+// Every page in every language, each listing its translations (hreflang).
+const indexed = PAGE_IDS.map((id) => PAGES[id]).filter((page) => !page.noindex);
+const urls = indexed.flatMap((page) => LOCALES.map(({ code }) => [
+  '  <url>',
+  `    <loc>${pageUrl(page, code)}</loc>`,
+  ...LOCALES.map((alt) => `    <xhtml:link rel="alternate" hreflang="${alt.code}" href="${pageUrl(page, alt.code)}" />`),
+  `    <xhtml:link rel="alternate" hreflang="x-default" href="${pageUrl(page, DEFAULT_LOCALE)}" />`,
+  '  </url>',
+].join('\n')));
 writeFileSync(join(dist, 'sitemap.xml'), [
   '<?xml version="1.0" encoding="UTF-8"?>',
-  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-  ...indexed.map((page) => `  <url><loc>${absolute(page.path)}</loc></url>`),
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+  ...urls,
   '</urlset>',
   '',
 ].join('\n'));
@@ -140,4 +158,4 @@ const swPath = join(dist, 'sw.js');
 writeFileSync(swPath, readFileSync(swPath, 'utf8').replace("const VERSION = 'v1';", `const VERSION = '${(lock.revision ?? 'local').slice(0, 7)}-${entry}';`));
 
 rmSync(ssrDir, { recursive: true, force: true });
-console.log(`Prerendered ${routes.length} pages; wrote sitemap.xml (${indexed.length} URLs), robots.txt, llms.txt, manifest.webmanifest, sw.js.`);
+console.log(`Prerendered ${written} pages in ${LOCALES.length} language(s); wrote sitemap.xml (${urls.length} URLs), robots.txt, llms.txt, manifest.webmanifest, sw.js.`);

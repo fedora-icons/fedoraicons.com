@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import type { IconEntry } from '../lib/catalog';
 import { Button, UiIcon } from './ui';
 
@@ -29,8 +30,10 @@ export function NoResults({
   onSwitchCatalog: () => void;
   onClear: () => void;
 }) {
+  const { t, label } = useI18n();
   const q = query.trim();
-  const requestHref = `${REQUEST_URL}?${new URLSearchParams({ title: `Icon request: ${q}` })}`;
+  const categoryName = category ? label('category', category, category) : null;
+  const requestHref = `${REQUEST_URL}?${new URLSearchParams({ title: t('noResults.requestTitle', { query: q }) })}`;
   return (
     <section
       aria-labelledby="no-results-title"
@@ -46,15 +49,15 @@ export function NoResults({
           <UiIcon name="binoculars" className="size-8" />
         </span>
         <h2 id="no-results-title" className="mt-6 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-          No {noun} for “{q}”{category ? <> in {category}</> : null}
+          {categoryName ? t('noResults.titleIn', { noun, query: q, category: categoryName }) : t('noResults.title', { noun, query: q })}
         </h2>
         <p className="mt-3 max-w-md text-sm text-muted sm:text-base">
-          Search looks at names, aliases, tags, and categories. Try a shorter or more general word, or one of these.
+          {t('noResults.body')}
         </p>
 
         {suggestions.length > 0 && (
           <div className="mt-8 w-full">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-faint">Did you mean</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-faint">{t('noResults.didYouMean')}</h3>
             <ul className="mt-3 flex flex-wrap justify-center gap-2">
               {suggestions.map((icon) => (
                 <li key={icon.name}>
@@ -79,22 +82,22 @@ export function NoResults({
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {elsewhere > 0 && (
             <Button variant="primary" onClick={onShowAllCategories}>
-              Show {elsewhere} in all categories
+              {t('noResults.showAllCategories', { count: elsewhere })}
             </Button>
           )}
           {otherCatalog > 0 && (
             <Button variant={elsewhere > 0 ? 'secondary' : 'primary'} onClick={onSwitchCatalog}>
-              {brandsView ? `Show ${otherCatalog} in icons` : `Show ${otherCatalog} in Brands`}
+              {t(brandsView ? 'noResults.showInIcons' : 'noResults.showInBrands', { count: otherCatalog })}
             </Button>
           )}
-          <Button icon="x" onClick={onClear}>Clear search{category ? ' and filters' : ''}</Button>
+          <Button icon="x" onClick={onClear}>{t(category ? 'noResults.clearAll' : 'noResults.clear')}</Button>
         </div>
 
         {!brandsView && (
           <div className="mt-10 flex w-full flex-col items-center gap-3 border-t border-line pt-8 sm:flex-row sm:justify-between sm:text-left">
             <p className="flex items-center gap-3 text-sm text-muted">
               <UiIcon name="lightbulb" className="size-5 shrink-0 text-brand" />
-              <span>Can’t find it? Ask for “{q}” and it may join the library.</span>
+              <span>{t('noResults.requestHint', { query: q })}</span>
             </p>
             <a
               href={requestHref}
@@ -102,9 +105,9 @@ export function NoResults({
               rel="noreferrer"
               className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-brand transition hover:bg-brand-soft"
             >
-              Request this icon
-              <UiIcon name="arrow-right" className="size-4" />
-              <span className="sr-only"> on GitHub (opens in a new tab)</span>
+              {t('noResults.request')}
+              <UiIcon name="arrow-right" className="size-4 rtl:-scale-x-100" />
+              <span className="sr-only">{t('noResults.requestNewTab')}</span>
             </a>
           </div>
         )}
