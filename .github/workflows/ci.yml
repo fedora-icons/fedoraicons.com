@@ -21,7 +21,7 @@ jobs:
           path: fedora-icons
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: fedoraicons.com/.nvmrc
           cache: npm
           cache-dependency-path: fedoraicons.com/package-lock.json
       - run: npm ci
