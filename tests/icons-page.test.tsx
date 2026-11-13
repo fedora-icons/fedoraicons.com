@@ -396,7 +396,8 @@ describe('Multi-select and ZIP export (desktop)', () => {
     fireEvent.change(within(pane).getByRole('slider', { name: 'Stroke width' }), { target: { value: '2' } });
     fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '32' } });
     await user.click(within(pane).getByRole('button', { name: 'Download 2 icons (.zip)' }));
-    await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/);
+    // Building the ZIP is slow on CI runners; allow more than the 1s default.
+    await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/, undefined, { timeout: 8000 });
 
     const { unzipSync, strFromU8 } = await import('fflate');
     const bytes = await new Promise<ArrayBuffer>((resolve) => {
