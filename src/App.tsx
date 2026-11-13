@@ -1,28 +1,19 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/ui';
 import { ThemeProvider } from './lib/theme';
 import { IconsPage } from './pages/IconsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 const DocsPage = lazy(() => import('./pages/DocsPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 
-function NotFound() {
-  return (
-    <div className="mx-auto max-w-xl px-4 py-24 text-center">
-      <h1 className="text-3xl font-semibold">Page not found</h1>
-      <p className="mt-3 text-muted">That page does not exist.</p>
-      <Link to="/" className="mt-6 inline-block text-brand underline underline-offset-4">Browse icons</Link>
-    </div>
-  );
-}
-
-export function App() {
+/** Routes and providers without a router, so the build can prerender them (see entry-server). */
+export function AppShell() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <BrowserRouter>
           <Suspense fallback={<div className="p-8 text-muted">Loading…</div>}>
             <Routes>
               <Route element={<Layout />}>
@@ -31,12 +22,19 @@ export function App() {
                 <Route path="brands" element={<Navigate to="/?style=brands" replace />} />
                 <Route path="docs" element={<DocsPage />} />
                 <Route path="pricing" element={<PricingPage />} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
           </Suspense>
-        </BrowserRouter>
       </ToastProvider>
     </ThemeProvider>
+  );
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   );
 }

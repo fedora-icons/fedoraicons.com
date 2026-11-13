@@ -102,8 +102,24 @@ describe('Icons page', () => {
 
   it('shows a useful empty state', async () => {
     renderAt('/?q=zzzznothing');
-    expect(screen.getByRole('heading', { name: /No icons match/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Clear search and filters' })).toBeTruthy();
+    const empty = within(screen.getByRole('region', { name: 'No icons for “zzzznothing”' }));
+    expect(empty.getByRole('button', { name: 'Clear search' })).toBeTruthy();
+    const request = empty.getByRole('link', { name: /Request this icon/ });
+    expect(request.getAttribute('href')).toBe('https://github.com/fedora-icons/fedora-icons/issues/new?title=Icon+request%3A+zzzznothing');
+  });
+
+  it('suggests close matches for a typo and searches them in one click', async () => {
+    const user = userEvent.setup();
+    renderAt('/?q=calender');
+    const suggestions = within(screen.getByRole('heading', { name: 'Did you mean' }).parentElement!);
+    const calendar = suggestions.getByRole('button', { name: 'calendar' });
+    await user.click(calendar);
+    expect(location).toBe('?q=calendar');
+  });
+
+  it('offers the other catalog when only it has matches', () => {
+    renderAt('/?q=spotify');
+    expect(screen.getByRole('button', { name: 'Show 1 in Brands' })).toBeTruthy();
   });
 
   it('restores style, category, and the selected icon from a shared URL', async () => {

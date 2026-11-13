@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import markRegular from '../brand/mark-regular.svg?raw';
 import { lock } from '../lib/catalog';
 import { CONTAINER, PaneHostContext } from '../lib/layout';
 import { LIBRARY_URL } from '../lib/links';
+import { useDocumentMeta } from '../lib/useDocumentMeta';
 import { HeaderActions } from './HeaderActions';
 import { ThemeToggle } from './ThemeToggle';
 import { UiIcon } from './ui';
@@ -12,6 +13,8 @@ const footerLink = 'inline-flex items-center gap-1 rounded text-muted underline-
 
 export function Layout() {
   const [paneHost, setPaneHost] = useState<HTMLElement | null>(null);
+  useDocumentMeta();
+  const { pathname } = useLocation();
   return (
     <PaneHostContext.Provider value={paneHost}>
       <div className="flex min-h-dvh">
@@ -33,7 +36,10 @@ export function Layout() {
             </div>
           </header>
           <main id="main" tabIndex={-1} className="flex-1 outline-none">
-            <Outlet />
+            {/* Re-keyed per page so moving between pages eases in (see .route-enter). */}
+            <div key={pathname} className="route-enter page-enter">
+              <Outlet />
+            </div>
           </main>
           <footer className="border-t border-line">
             <div className={`${CONTAINER} flex flex-col gap-3 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between`}>

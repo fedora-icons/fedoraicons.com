@@ -89,6 +89,35 @@ export function loadStyle(style: StyleId): Promise<Record<string, string>> {
   return cache[style];
 }
 
+/** Icons per artwork chunk; matches ICON_CHUNK in scripts/sync-icons.mjs. */
+export const ICON_CHUNK = 96;
+const position = new Map(catalog.icons.map((icon, i) => [icon.name, i]));
+let chunkCache: Record<string, Promise<Record<string, string>>> = {};
+
+/** The artwork chunks (catalog order) that hold these icons, in first-needed order. */
+export function chunksFor(names: Iterable<string>): number[] {
+  const chunks = new Set<number>();
+  for (const name of names) {
+    const i = position.get(name);
+    if (i !== undefined) chunks.add(Math.floor(i / ICON_CHUNK));
+  }
+  return [...chunks];
+}
+
+/** One chunk of a style's artwork, fetched once. */
+export function loadIconChunk(style: StyleId, chunk: number): Promise<Record<string, string>> {
+  const key = `${style}/${chunk}`;
+  chunkCache[key] ??= fetch(`${import.meta.env.BASE_URL}icons/${key}.json`).then((res) => {
+    if (!res.ok) throw new Error(`Could not load ${STYLE_META[style].label} icons (${res.status})`);
+    return res.json() as Promise<Record<string, string>>;
+  }).catch((error: unknown) => {
+    delete chunkCache[key];
+    throw error;
+  });
+  return chunkCache[key];
+}
+
 export function resetStyleCache() {
   cache = {};
+  chunkCache = {};
 }

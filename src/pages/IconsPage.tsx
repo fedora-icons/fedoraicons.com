@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { CustomizePanel } from '../components/Customize';
 import { GridHelp, IconGrid } from '../components/IconGrid';
 import { Inspector, SidePane } from '../components/Inspector';
+import { NoResults } from '../components/NoResults';
 import { SelectionPanel } from '../components/SelectionPanel';
 import { Button, Segmented, UiIcon } from '../components/ui';
 import { availableBrandStyles, brandCategories, brandEntries, brands, hasBrandStyle, loadBrands } from '../lib/brands';
-import { catalog, iconsByName, loadStyle, STYLE_META, type StyleId } from '../lib/catalog';
+import { catalog, chunksFor, iconsByName, loadIconChunk, loadStyle, STYLE_META, type StyleId } from '../lib/catalog';
 import { CONTAINER, usePaneHost } from '../lib/layout';
 import { DEFAULT_LOOK, gridVars, type Look } from '../lib/look';
-import { createIndex, search } from '../lib/search';
+import { createIndex, search, suggest } from '../lib/search';
 import { prepareGridSvg } from '../lib/svg';
 import { useMediaQuery, useTheme } from '../lib/theme';
 import {
@@ -193,15 +194,38 @@ export function IconsPage() {
     return () => document.documentElement.removeAttribute('data-brand-marks');
   }, [brandsView]);
 
+  // Core artwork loads in chunks as icons near the viewport (see IconGrid's
+  // onNeed); brands are few and load at once. Without IntersectionObserver
+  // (old browsers, tests) the whole style loads in one request instead.
+  const lazyArtwork = !brandsView && typeof IntersectionObserver !== 'undefined';
+  const mergedChunks = useRef(new Set<string>());
+  const need = useCallback((names: Iterable<string>) => {
+    if (!lazyArtwork) return;
+    for (const chunk of chunksFor(names)) {
+      const key = `${drawStyle}/${chunk}`;
+      if (mergedChunks.current.has(key)) continue;
+      loadIconChunk(drawStyle, chunk)
+        .then((data) => {
+          if (mergedChunks.current.has(key)) return;
+          mergedChunks.current.add(key);
+          setSvgs((s) => ({ ...s, [drawStyle]: { ...s[drawStyle], ...data } }));
+        })
+        .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load icons.'));
+    }
+  }, [lazyArtwork, drawStyle, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- a retry re-asks for what's in view
+
   useEffect(() => {
-    if (brandsView && brandEntries.length === 0) return;
+    if (lazyArtwork || (brandsView && brandEntries.length === 0)) return;
     let cancelled = false;
     setError(null);
     (brandsView ? loadBrands(brandStyle) : loadStyle(drawStyle))
       .then((data) => { if (!cancelled) setSvgs((s) => ({ ...s, [svgKey]: data })); })
       .catch((e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load icons.'); });
     return () => { cancelled = true; };
-  }, [brandsView, brandStyle, drawStyle, svgKey, attempt]);
+  }, [lazyArtwork, brandsView, brandStyle, drawStyle, svgKey, attempt]);
+
+  // A retry clears the failed chunks so the grid asks for them again.
+  useEffect(() => { if (attempt) setError(null); }, [attempt]);
 
   const index = brandsView ? brandIndex : coreIndex;
   const results = useMemo(() => {
@@ -212,8 +236,16 @@ export function IconsPage() {
     () => (state.category && state.q && results.length === 0 ? search(index, state.q).length : 0),
     [index, state.q, state.category, results.length],
   );
+  const noResults = !!state.q.trim() && results.length === 0;
+  const suggestions = useMemo(() => (noResults ? suggest(index, state.q) : []), [noResults, index, state.q]);
+  const otherCatalog = useMemo(
+    () => (noResults ? search(brandsView ? coreIndex : brandIndex, state.q).length : 0),
+    [noResults, brandsView, state.q],
+  );
 
   const selected = state.icon ? (brandsView ? brandsByName.get(state.icon) : iconsByName.get(state.icon)) ?? null : null;
+  // The pane and selection need their artwork even when scrolled out of view.
+  useEffect(() => { need([...multi, ...(selected ? [selected.name] : [])]); }, [need, multi, selected]);
   const styleSvgs = svgs[svgKey] ?? null;
   const gridSvgs = useMemo(
     () => (styleSvgs ? Object.fromEntries(Object.entries(styleSvgs).map(([k, v]) => [k, prepareGridSvg(v)])) : null),
@@ -369,28 +401,24 @@ export function IconsPage() {
               svgs={gridSvgs}
               selected={selectedSet}
               onSelect={select}
+              onNeed={lazyArtwork ? need : undefined}
             />
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-line-strong px-6 py-14 text-center">
-            <h2 className="text-lg font-semibold">No {noun[1]} match “{state.q.trim()}”{state.category ? ` in ${state.category}` : ''}</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-              Try a broader or different word — search covers icon names, their library paths, and categories.
-            </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {elsewhere > 0 && (
-                <Button variant="primary" onClick={() => update({ category: null })}>
-                  Show {elsewhere} in all categories
-                </Button>
-              )}
-              <Button onClick={() => { update({ q: '', category: null }); searchRef.current?.focus(); }}>Clear search and filters</Button>
-            </div>
-            {!brandsView && (
-              <p className="mt-6 text-sm text-muted">
-                Missing an icon? <a className="text-brand underline underline-offset-2" href="https://github.com/fedora-icons/fedora-icons/issues">Request it on GitHub</a>.
-              </p>
-            )}
-          </div>
+          <NoResults
+            query={state.q}
+            category={state.category}
+            noun={noun[1]}
+            brandsView={brandsView}
+            suggestions={suggestions}
+            svgs={gridSvgs}
+            elsewhere={elsewhere}
+            otherCatalog={otherCatalog}
+            onSearch={(q) => update({ q, category: null })}
+            onShowAllCategories={() => update({ category: null })}
+            onSwitchCatalog={() => { setMulti([]); update({ style: brandsView ? catalog.styles[0] : 'brands', category: null, icon: null }); }}
+            onClear={() => { update({ q: '', category: null }); searchRef.current?.focus(); }}
+          />
         )}
       </div>
 
