@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/errors';
 import brandData from '../data/brands.json';
 import type { IconEntry } from './catalog';
 import { scopeSvg } from './svg';
@@ -40,7 +41,7 @@ export function loadBrands(style: BrandStyle): Promise<Record<string, string>> {
       const file = b.files[style];
       if (!file) return null;
       const res = await fetch(`${import.meta.env.BASE_URL}${file}`);
-      if (!res.ok) throw new Error(`Could not load ${b.name} (${res.status})`);
+      if (!res.ok) throw new LocalizedError('error.loadBrand', { name: b.name, status: String(res.status) });
       // Marks are shown unmodified, but their IDs (gradients, clip paths) are
       // namespaced so marks sharing an ID don't repaint each other on one page.
       return [b.name, scopeSvg(await res.text(), `brand-${b.name}-${style}`)] as const;

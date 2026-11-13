@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { LocalLink, useI18n } from '../i18n';
 import { UiIcon, type UiIconName } from '../components/ui';
 import { catalog } from '../lib/catalog';
 import { CONTAINER } from '../lib/layout';
 
-const nf = new Intl.NumberFormat('en-US');
 
 /** The tiles around the gap: real library glyphs, one slot left empty. */
 const TILES: (UiIconName | null)[] = [
@@ -18,11 +18,12 @@ const POPULAR = [...catalog.categories].sort((a, b) => b.count - a.count).slice(
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
+  const { t, rich, label, path, n } = useI18n();
   const [query, setQuery] = useState('');
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const q = query.trim();
-    navigate(q ? `/?${new URLSearchParams({ q })}` : '/');
+    navigate(path(q ? `/?${new URLSearchParams({ q })}` : '/'));
   };
 
   return (
@@ -32,17 +33,17 @@ export default function NotFoundPage() {
           <p className="inline-flex items-center gap-2 rounded-full bg-brand-soft px-3 py-1 text-sm font-medium text-brand">
             <span className="font-mono">404</span>
             <span aria-hidden="true">·</span>
-            Page not found
+            {t('notFound.badge')}
           </p>
           <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-            This page went <span className="text-brand">off the grid</span>.
+            {rich('notFound.title', { em: (text) => <span className="text-brand">{text}</span> })}
           </h1>
           <p className="mt-4 max-w-lg text-base text-muted sm:text-lg">
-            The link may be old or mistyped. All {nf.format(catalog.icons.length)} icons are still here. Search for one, or pick a place to start.
+            {t('notFound.body', { count: catalog.icons.length })}
           </p>
 
           <form role="search" onSubmit={submit} className="mt-8 flex max-w-lg gap-2">
-            <label htmlFor="not-found-search" className="sr-only">Search icons</label>
+            <label htmlFor="not-found-search" className="sr-only">{t('notFound.searchLabel')}</label>
             <div className="relative flex-1">
               <UiIcon name="search" className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted" />
               <input
@@ -50,25 +51,25 @@ export default function NotFoundPage() {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search icons, e.g. arrow, calendar"
+                placeholder={t('notFound.searchPlaceholder')}
                 className="h-11 w-full rounded-xl border border-line-strong bg-surface pl-11 pr-3 text-base text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15"
               />
             </div>
             <button type="submit" className="h-11 rounded-xl bg-brand px-4 text-sm font-medium text-brand-ink transition hover:brightness-110">
-              Search
+              {t('notFound.search')}
             </button>
           </form>
 
-          <nav aria-label="Places to go" className="mt-6 flex flex-wrap gap-2">
-            <Link to="/" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium text-ink transition hover:bg-sunken">
-              <UiIcon name="home" className="size-4" /> Browse all icons
-            </Link>
-            <Link to="/docs" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium text-ink transition hover:bg-sunken">
-              <UiIcon name="book-open" className="size-4" /> Read the docs
-            </Link>
-            <Link to="/?style=brands" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium text-ink transition hover:bg-sunken">
-              <UiIcon name="sparkles" className="size-4" /> Brand icons
-            </Link>
+          <nav aria-label={t('notFound.places')} className="mt-6 flex flex-wrap gap-2">
+            <LocalLink to="/" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium text-ink transition hover:bg-sunken">
+              <UiIcon name="home" className="size-4" /> {t('notFound.browse')}
+            </LocalLink>
+            <LocalLink to="/docs" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium text-ink transition hover:bg-sunken">
+              <UiIcon name="book-open" className="size-4" /> {t('notFound.docs')}
+            </LocalLink>
+            <LocalLink to="/?style=brands" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium text-ink transition hover:bg-sunken">
+              <UiIcon name="sparkles" className="size-4" /> {t('notFound.brands')}
+            </LocalLink>
           </nav>
         </div>
 
@@ -90,17 +91,17 @@ export default function NotFoundPage() {
       </div>
 
       <section aria-labelledby="popular-categories" className="mt-16 border-t border-line pt-10">
-        <h2 id="popular-categories" className="text-sm font-medium text-muted">Popular categories</h2>
+        <h2 id="popular-categories" className="text-sm font-medium text-muted">{t('notFound.popular')}</h2>
         <ul className="mt-4 flex flex-wrap gap-2">
           {POPULAR.map((c) => (
             <li key={c.name}>
-              <Link
+              <LocalLink
                 to={`/?${new URLSearchParams({ category: c.name })}`}
                 className="inline-flex h-9 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-sm text-ink transition hover:border-brand hover:bg-brand-soft"
               >
-                {c.name}
-                <span className="text-xs tabular-nums text-faint">{nf.format(c.count)}</span>
-              </Link>
+                {label('category', c.name, c.name)}
+                <span className="text-xs tabular-nums text-faint">{n(c.count)}</span>
+              </LocalLink>
             </li>
           ))}
         </ul>

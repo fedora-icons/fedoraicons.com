@@ -138,6 +138,33 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   links have no trailing slash (`/docs`), so the host should serve
   `docs/index.html` at `/docs` without redirecting.
 
+## Languages
+
+The site is built for several languages; it ships in English today.
+
+- **Add a language**: add it to `LOCALES` in `src/i18n/config.ts`, then
+  create `src/i18n/messages/<code>.ts` translating keys from
+  `src/i18n/messages/en.ts`. Keys you leave out fall back to English, and
+  `npm test` reports how many remain. Right-to-left languages set
+  `dir: 'rtl'`.
+- **URLs**: English stays at `/`; other languages live under `/<code>/`
+  (`/fr/docs`). Search, filters, and the selected icon are query strings,
+  so they carry across languages. A footer menu appears once there are two
+  or more languages.
+- **Messages**: `{name}` placeholders (numbers are formatted per language),
+  plural forms chosen with the language's own rules (`one`, `few`, `many`,
+  `other`, …), and `<link>…</link>`-style tags so translators can move links
+  and emphasis. Errors from shared code carry message keys
+  (`LocalizedError`) and are translated when shown. Library category and
+  modifier names can be translated as `category.<name>` / `modifier.<id>`.
+- **Docs** is long-form, so it's translated as a page: add
+  `src/i18n/content/<code>/DocsPage.tsx`. Until then, that language shows the
+  English Docs, marked `lang="en"`, with a note.
+- **SEO**: the build prerenders every page in every language, with
+  `<html lang dir>`, translated titles and descriptions, a canonical link per
+  language, `hreflang` alternates (plus `x-default`), `og:locale` and its
+  alternates, and a sitemap listing every translation.
+
 ## Speed and offline
 
 - Icon artwork loads in 96-icon chunks (`public/icons/<style>/<n>.json`) as
@@ -165,6 +192,7 @@ src/lib/                  svg export, search, URL state, look (customization), b
 src/components/           layout, grid, side pane + inspector, customize controls, UI primitives
 src/pages/                Icons (core styles and Brands), Docs, Pricing, 404
 src/entry-server.tsx      build-time prerender entry
+src/i18n/                 languages, messages, translator, localized Docs
 tests/                    Vitest suites
 ```
 

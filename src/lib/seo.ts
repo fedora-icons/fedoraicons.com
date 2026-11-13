@@ -1,3 +1,4 @@
+import { createI18n, DEFAULT_LOCALE, LOCALES, localizePath, splitLocale, type I18n, type MessageKey } from '../i18n';
 import { brands } from './brands';
 import { catalog, STYLE_META } from './catalog';
 import { FIGMA_URL, LIBRARY_URL } from './links';
@@ -15,15 +16,7 @@ export const GITHUB_ORG_URL = 'https://github.com/fedora-icons';
 export const NPM_REACT_URL = 'https://www.npmjs.com/package/@fedora-icons/react';
 export const NPM_VUE_URL = 'https://www.npmjs.com/package/@fedora-icons/vue';
 
-export const SHARE_IMAGE = {
-  path: '/og-image.png',
-  width: 1200,
-  height: 630,
-  alt: 'Fedora Icons: open-source icons in Regular, Solid, Duocolor, and Duotone, shown on a grid.',
-};
-
-const nf = new Intl.NumberFormat('en-US');
-const list = (items: string[]) => new Intl.ListFormat('en', { type: 'conjunction' }).format(items);
+export const SHARE_IMAGE = { path: '/og-image.png', width: 1200, height: 630 };
 
 export const facts = {
   icons: catalog.icons.length,
@@ -38,7 +31,7 @@ export type PageId = 'home' | 'docs' | 'pricing' | 'brands' | 'not-found';
 
 export interface PageMeta {
   id: PageId;
-  /** Canonical path, without a trailing slash (except the root). */
+  /** Canonical path in the default language, without a trailing slash (except the root). */
   path: string;
   title: string;
   description: string;
@@ -46,51 +39,46 @@ export interface PageMeta {
   noindex?: boolean;
 }
 
-const iconCount = nf.format(facts.icons);
-const styleList = list(facts.styles);
+const PATHS: Record<PageId, string> = { home: '/', docs: '/docs', pricing: '/pricing', brands: '/brands', 'not-found': '/404' };
+const META_KEYS = {
+  home: ['meta.home.title', 'meta.home.description'],
+  docs: ['meta.docs.title', 'meta.docs.description'],
+  pricing: ['meta.pricing.title', 'meta.pricing.description'],
+  brands: ['meta.brands.title', 'meta.brands.description'],
+  'not-found': ['meta.notFound.title', 'meta.notFound.description'],
+} as const satisfies Record<PageId, readonly [MessageKey, MessageKey]>;
 
-export const PAGES: Record<PageId, PageMeta> = {
-  home: {
-    id: 'home',
-    path: '/',
-    title: 'Fedora Icons — Find the right icon, then ship it',
-    description: `${iconCount} free, ${facts.license}-licensed SVG icons in ${styleList}. Search, recolor, and resize them, then export SVG or PNG, or use them in React and Figma.`,
-  },
-  docs: {
-    id: 'docs',
-    path: '/docs',
-    title: 'Docs — Use Fedora Icons in SVG, React, and Figma',
-    description: `How to use Fedora Icons: the four styles, SVG files, the React package, Figma, colors, sizes, ${facts.modifiers} modifiers, accessibility, licensing, and privacy.`,
-  },
-  pricing: {
-    id: 'pricing',
-    path: '/pricing',
-    title: 'Pricing — Fedora Icons',
-    description: `Fedora Icons is free today: all ${iconCount} core icons in ${styleList}, under the ${facts.license} license. Plans haven't been announced yet.`,
-  },
-  brands: {
-    id: 'brands',
-    path: '/brands',
-    title: 'Brand icons — Fedora Icons',
-    description: `${nf.format(facts.brands)} brand logos, including social networks, Google Chrome, and Microsoft Edge, Teams, and Windows, shown as their owners provide them. Not covered by the ${facts.license} license.`,
-  },
-  'not-found': {
-    id: 'not-found',
-    path: '/404',
-    title: 'Page not found — Fedora Icons',
-    description: 'That page does not exist. Browse Fedora Icons instead.',
-    noindex: true,
-  },
-};
+export const PAGE_IDS = Object.keys(PATHS) as PageId[];
 
-/** The metadata for a location in the app. */
-export function pageFor(pathname: string, search = ''): PageMeta {
-  const path = pathname.replace(/\/+$/, '') || '/';
-  if (path === '/') return new URLSearchParams(search).get('style') === 'brands' ? PAGES.brands : PAGES.home;
-  if (path === '/docs') return PAGES.docs;
-  if (path === '/pricing') return PAGES.pricing;
-  if (path === '/brands') return PAGES.brands;
-  return PAGES['not-found'];
+/** A page's metadata in a language; counts come from the catalog. */
+export function pageMeta(id: PageId, i18n: I18n = createI18n(DEFAULT_LOCALE)): PageMeta {
+  const vars = {
+    icons: facts.icons,
+    styles: i18n.list(catalog.styles.map((s) => i18n.t(`style.${s}`))),
+    license: facts.license,
+    modifiers: facts.modifiers,
+    brands: facts.brands,
+  };
+  const [title, description] = META_KEYS[id];
+  return { id, path: PATHS[id], title: i18n.t(title, vars), description: i18n.t(description, vars), noindex: id === 'not-found' };
+}
+
+/** English metadata for every page (for the build's sitemap and llms.txt). */
+export const PAGES = Object.fromEntries(PAGE_IDS.map((id) => [id, pageMeta(id)])) as Record<PageId, PageMeta>;
+
+/** Which page a location shows (the path may include a language prefix). */
+export function pageIdFor(pathname: string, search = ''): PageId {
+  const path = splitLocale(pathname).path.replace(/\/+$/, '') || '/';
+  if (path === '/') return new URLSearchParams(search).get('style') === 'brands' ? 'brands' : 'home';
+  if (path === '/docs') return 'docs';
+  if (path === '/pricing') return 'pricing';
+  if (path === '/brands') return 'brands';
+  return 'not-found';
+}
+
+/** The metadata for a location in the app, in a language. */
+export function pageFor(pathname: string, search = '', i18n?: I18n): PageMeta {
+  return pageMeta(pageIdFor(pathname, search), i18n);
 }
 
 export const absolute = (path: string) => `${SITE_URL}${path}`;
@@ -104,9 +92,14 @@ const ORGANIZATION = {
   sameAs: [GITHUB_ORG_URL, NPM_REACT_URL, NPM_VUE_URL, ...(FIGMA_URL ? [FIGMA_URL] : [])],
 };
 
+/** A page's URL in a language. */
+export const pageUrl = (page: Pick<PageMeta, 'path'>, locale: string) => absolute(localizePath(page.path, locale));
+
 /** schema.org structured data for a page, as one JSON-LD graph. */
-export function structuredData(page: PageMeta): object {
-  const url = absolute(page.path);
+export function structuredData(page: PageMeta, i18n: I18n = createI18n(DEFAULT_LOCALE)): object {
+  const lang = i18n.config.code;
+  const url = pageUrl(page, lang);
+  const home = pageMeta('home', i18n);
   const webPage = {
     '@type': page.id === 'docs' ? 'TechArticle' : 'WebPage',
     '@id': `${url}#webpage`,
@@ -117,7 +110,7 @@ export function structuredData(page: PageMeta): object {
     isPartOf: { '@id': `${SITE_URL}/#website` },
     publisher: { '@id': `${SITE_URL}/#organization` },
     primaryImageOfPage: absolute(SHARE_IMAGE.path),
-    inLanguage: 'en',
+    inLanguage: lang,
   };
   const graph: object[] = [
     {
@@ -125,12 +118,12 @@ export function structuredData(page: PageMeta): object {
       '@id': `${SITE_URL}/#website`,
       url: `${SITE_URL}/`,
       name: SITE_NAME,
-      description: PAGES.home.description,
+      description: home.description,
       publisher: { '@id': `${SITE_URL}/#organization` },
-      inLanguage: 'en',
+      inLanguage: LOCALES.map((l) => l.code),
       potentialAction: {
         '@type': 'SearchAction',
-        target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/?q={search_term_string}` },
+        target: { '@type': 'EntryPoint', urlTemplate: `${pageUrl(home, lang)}?q={search_term_string}` },
         'query-input': 'required name=search_term_string',
       },
     },
@@ -142,7 +135,11 @@ export function structuredData(page: PageMeta): object {
       '@type': 'SoftwareSourceCode',
       '@id': `${SITE_URL}/#library`,
       name: SITE_NAME,
-      description: `${iconCount} open-source SVG icons on a 24px grid in ${styleList}, with ${facts.modifiers} reusable modifiers.`,
+      description: i18n.t('meta.library.description', {
+        icons: facts.icons,
+        styles: i18n.list(catalog.styles.map((s) => i18n.t(`style.${s}`))),
+        modifiers: facts.modifiers,
+      }),
       codeRepository: LIBRARY_URL,
       programmingLanguage: ['SVG', 'TypeScript'],
       license: 'https://opensource.org/licenses/MIT',
@@ -154,7 +151,7 @@ export function structuredData(page: PageMeta): object {
     graph.push({
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 1, name: SITE_NAME, item: pageUrl(home, lang) },
         { '@type': 'ListItem', position: 2, name: page.title.split(' — ')[0], item: url },
       ],
     });
@@ -165,20 +162,32 @@ export function structuredData(page: PageMeta): object {
 const escapeAttr = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const escapeText = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Every head tag that varies by page, for the static HTML. */
-export function headTags(page: PageMeta): string {
-  const url = absolute(page.path);
+/**
+ * Every head tag that varies by page and language, for the static HTML:
+ * title, description, robots, canonical, hreflang alternates for every
+ * language (plus x-default), Open Graph and X/Twitter tags, and JSON-LD.
+ */
+export function headTags(page: PageMeta, i18n: I18n = createI18n(DEFAULT_LOCALE)): string {
+  const lang = i18n.config.code;
+  const url = pageUrl(page, lang);
   const image = absolute(SHARE_IMAGE.path);
+  const imageAlt = i18n.t('meta.shareImageAlt');
   const meta = (attr: 'name' | 'property', key: string, value: string) => `<meta ${attr}="${key}" content="${escapeAttr(value)}" />`;
-  const json = JSON.stringify(structuredData(page)).replace(/</g, '\\u003c');
+  const json = JSON.stringify(structuredData(page, i18n)).replace(/</g, '\\u003c');
+  const alternates = page.noindex ? [] : [
+    ...LOCALES.map((l) => `<link rel="alternate" hreflang="${l.code}" href="${pageUrl(page, l.code)}" />`),
+    `<link rel="alternate" hreflang="x-default" href="${pageUrl(page, DEFAULT_LOCALE)}" />`,
+  ];
   return [
     `<title>${escapeText(page.title)}</title>`,
     meta('name', 'description', page.description),
     page.noindex ? meta('name', 'robots', 'noindex, follow') : meta('name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1'),
     page.noindex ? '' : `<link rel="canonical" href="${url}" />`,
+    ...alternates,
     meta('property', 'og:type', 'website'),
     meta('property', 'og:site_name', SITE_NAME),
-    meta('property', 'og:locale', 'en_US'),
+    meta('property', 'og:locale', i18n.config.ogLocale),
+    ...LOCALES.filter((l) => l.code !== lang).map((l) => meta('property', 'og:locale:alternate', l.ogLocale)),
     meta('property', 'og:title', page.title),
     meta('property', 'og:description', page.description),
     meta('property', 'og:url', url),
@@ -186,12 +195,12 @@ export function headTags(page: PageMeta): string {
     meta('property', 'og:image:type', 'image/png'),
     meta('property', 'og:image:width', String(SHARE_IMAGE.width)),
     meta('property', 'og:image:height', String(SHARE_IMAGE.height)),
-    meta('property', 'og:image:alt', SHARE_IMAGE.alt),
+    meta('property', 'og:image:alt', imageAlt),
     meta('name', 'twitter:card', 'summary_large_image'),
     meta('name', 'twitter:title', page.title),
     meta('name', 'twitter:description', page.description),
     meta('name', 'twitter:image', image),
-    meta('name', 'twitter:image:alt', SHARE_IMAGE.alt),
+    meta('name', 'twitter:image:alt', imageAlt),
     `<script type="application/ld+json">${json}</script>`,
   ].filter(Boolean).join('\n    ');
 }

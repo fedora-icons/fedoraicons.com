@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/errors';
 import catalogData from '../data/catalog.json';
 import paletteData from '../data/palettes.json';
 import sourceLock from '../data/source-lock.json';
@@ -80,7 +81,7 @@ let cache: Partial<Record<StyleId, Promise<Record<string, string>>>> = {};
 /** Fetch one style's SVG snapshot. Only requested styles are downloaded. */
 export function loadStyle(style: StyleId): Promise<Record<string, string>> {
   cache[style] ??= fetch(`${import.meta.env.BASE_URL}icons/${style}.json`).then((res) => {
-    if (!res.ok) throw new Error(`Could not load ${STYLE_META[style].label} icons (${res.status})`);
+    if (!res.ok) throw new LocalizedError('error.loadStyle', { style: STYLE_META[style].label, status: String(res.status) });
     return res.json() as Promise<Record<string, string>>;
   }).catch((error: unknown) => {
     delete cache[style];
@@ -108,7 +109,7 @@ export function chunksFor(names: Iterable<string>): number[] {
 export function loadIconChunk(style: StyleId, chunk: number): Promise<Record<string, string>> {
   const key = `${style}/${chunk}`;
   chunkCache[key] ??= fetch(`${import.meta.env.BASE_URL}icons/${key}.json`).then((res) => {
-    if (!res.ok) throw new Error(`Could not load ${STYLE_META[style].label} icons (${res.status})`);
+    if (!res.ok) throw new LocalizedError('error.loadStyle', { style: STYLE_META[style].label, status: String(res.status) });
     return res.json() as Promise<Record<string, string>>;
   }).catch((error: unknown) => {
     delete chunkCache[key];

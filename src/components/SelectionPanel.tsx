@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n';
+import { errorText } from '../i18n/errors';
 import { useMemo, useState } from 'react';
 import { STYLE_META, type StyleId } from '../lib/catalog';
 import { copyText, downloadBlob, svgToPng } from '../lib/export';
@@ -27,6 +29,8 @@ export function SelectionPanel({
   headingId: string;
 }) {
   const toast = useToast();
+  const i18n = useI18n();
+  const { t } = i18n;
   const { resolved: theme } = useTheme();
   const [format, setFormat] = useState<Format>('svg');
   const [scale, setScale] = useState<(typeof PNG_SCALES)[number]>(2);
@@ -67,9 +71,9 @@ export function SelectionPanel({
       }
       const zipName = `fedora-icons-${kind === 'brand' ? 'brands-' : ''}${slug}-${names.length}-${format}.zip`;
       downloadBlob(await buildZip(entries), zipName);
-      toast('success', `Downloaded ${names.length} icons as ${zipName}`);
+      toast('success', i18n.t('selection.downloaded', { count: names.length, file: zipName }));
     } catch (error) {
-      toast('error', error instanceof Error ? error.message : 'Could not build the ZIP.');
+      toast('error', errorText(error, i18n, 'error.zip'));
     } finally {
       setBusy(false);
     }
@@ -80,23 +84,23 @@ export function SelectionPanel({
       <div className="flex items-start gap-3 px-5 pb-4 pt-5">
         <div className="min-w-0 flex-1">
           <h2 id={headingId} tabIndex={-1} className="text-xl font-semibold outline-none">
-            {names.length} icons selected
+            {t('selection.title', { count: names.length })}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            {STYLE_META[style].label}. Settings below apply to all of them. Shift-click icons to add or remove.
+            {t('selection.intro', { style: t(`style.${style}`) })}
           </p>
         </div>
-        <IconButton icon="x" label="Clear selection" onClick={onClear} className="-mr-2 -mt-1" />
+        <IconButton icon="x" label={t('inspector.clear')} onClick={onClear} className="-mr-2 -mt-1" />
       </div>
 
       <div className="px-5 pb-4">
-        <ul aria-label="Selected icons" className="grid max-h-[176px] grid-cols-5 gap-1.5 overflow-y-auto rounded-2xl border border-line p-1.5">
+        <ul aria-label={t('selection.list')} className="grid max-h-[176px] grid-cols-5 gap-1.5 overflow-y-auto rounded-2xl border border-line p-1.5">
           {names.map((name, i) => (
             <li key={name}>
               <button
                 type="button"
                 title={name}
-                aria-label={`Remove ${name} from selection`}
+                aria-label={t('selection.remove', { name })}
                 onClick={() => onRemove(name)}
                 className="group relative flex aspect-square w-full items-center justify-center rounded-xl bg-sunken text-ink transition-colors hover:bg-line"
               >
@@ -116,11 +120,11 @@ export function SelectionPanel({
 
       <CustomizeControls look={look} onChange={onLookChange} style={style} kind={kind} />
 
-      <Section title="Export">
+      <Section title={t('export.title')}>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Segmented
-              label="ZIP format"
+              label={t('selection.zipFormat')}
               size="sm"
               value={format}
               onChange={setFormat}
@@ -128,35 +132,34 @@ export function SelectionPanel({
             />
             {format === 'png' && (
               <>
-                <label className="sr-only" htmlFor="zip-scale">PNG scale</label>
+                <label className="sr-only" htmlFor="zip-scale">{t('selection.pngScale')}</label>
                 <select
                   id="zip-scale"
                   value={scale}
                   onChange={(e) => setScale(Number(e.target.value) as (typeof PNG_SCALES)[number])}
                   className="h-8 rounded-lg border border-line-strong bg-surface px-2 text-sm"
                 >
-                  {PNG_SCALES.map((s) => <option key={s} value={s}>{s}× · {look.size * s}px</option>)}
+                  {PNG_SCALES.map((s) => <option key={s} value={s}>{s}× · {t('customize.pxValue', { value: look.size * s })}</option>)}
                 </select>
               </>
             )}
           </div>
           <Button variant="primary" icon="download" className="h-10 w-full" disabled={!ready || busy} onClick={download}>
-            {busy ? 'Building ZIP…' : `Download ${names.length} icons (.zip)`}
+            {busy ? t('selection.building') : t('selection.download', { count: names.length })}
           </Button>
           <Button
             icon="copy"
             className="w-full"
             disabled={busy}
             onClick={() => copyText(names.join('\n')).then(
-              () => toast('success', `Copied ${names.length} names`),
-              (e: unknown) => toast('error', e instanceof Error ? e.message : 'Could not copy.'),
+              () => toast('success', t('selection.copiedNames', { count: names.length })),
+              (e: unknown) => toast('error', errorText(e, i18n, 'error.copy')),
             )}
           >
-            Copy names
+            {t('selection.copyNames')}
           </Button>
           <p className="text-xs leading-relaxed text-faint">
-            Each file uses the size, stroke, and colors above{format === 'png' ? ' and has a transparent background' : ''}.
-            Modifier glyphs keep their library colors.
+            {format === 'png' ? t('selection.notePng') : t('selection.noteSvg')}
           </p>
         </div>
       </Section>

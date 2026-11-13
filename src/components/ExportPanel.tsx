@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { useId, useState } from 'react';
 import { copyPng, copyText, downloadBlob, svgBlob, svgToPng } from '../lib/export';
 import { buildZip, type ZipEntry } from '../lib/zip';
@@ -33,11 +34,11 @@ export const defaultSuffix = (r: Pick<ExportRow, 'format' | 'scale'>, size: numb
 const field = 'h-8 rounded-md border border-transparent bg-sunken px-2 text-sm text-ink transition-colors hover:border-line-strong disabled:text-faint disabled:hover:border-transparent';
 
 type CopyKind = 'svg' | 'png' | 'name';
-const COPY_KINDS: { value: CopyKind; label: string }[] = [
-  { value: 'svg', label: 'SVG code' },
-  { value: 'png', label: 'PNG image' },
-  { value: 'name', label: 'Name' },
-];
+const COPY_KINDS = [
+  { value: 'svg', label: 'export.copySvg' },
+  { value: 'png', label: 'export.copyPng' },
+  { value: 'name', label: 'export.copyName' },
+] as const satisfies readonly { value: CopyKind; label: string }[];
 let rememberedCopy: { kind: CopyKind; scale: Scale } = { kind: 'svg', scale: 2 };
 
 /**
@@ -59,6 +60,7 @@ export function ExportPanel({
   run: (action: () => Promise<void> | void, success: string) => Promise<void>;
 }) {
   const uid = useId();
+  const { t } = useI18n();
   const [rows, setRowsState] = useState<ExportRow[]>(remembered);
   const [openRow, setOpenRow] = useState<number | null>(null);
   const [copy, setCopyState] = useState(rememberedCopy);
@@ -92,40 +94,40 @@ export function ExportPanel({
     } else {
       downloadBlob(await buildZip(files), `${baseName}.zip`);
     }
-  }, rows.length === 1 ? `Downloaded ${fileName(rows[0])}` : `Downloaded ${rows.length} files as ${baseName}.zip`);
+  }, rows.length === 1 ? t('export.downloaded', { file: fileName(rows[0]) }) : t('export.downloadedZip', { count: rows.length, file: `${baseName}.zip` }));
 
   const doCopy = () => {
-    if (copy.kind === 'name') return run(() => copyText(name), `Copied “${name}”`);
-    if (copy.kind === 'svg') return run(() => copyText(build(size)), 'SVG copied');
+    if (copy.kind === 'name') return run(() => copyText(name), t('export.copiedName', { name }));
+    if (copy.kind === 'svg') return run(() => copyText(build(size)), t('export.copiedSvg'));
     const px = pxOf(size, copy.scale);
-    return run(() => copyPng(Promise.resolve().then(() => svgToPng(build(px), px))), `Copied a ${px}px PNG`);
+    return run(() => copyPng(Promise.resolve().then(() => svgToPng(build(px), px))), t('export.copiedPng', { px }));
   };
 
   return (
     <Section
-      title="Export"
-      aside={<IconButton icon="plus" label="Add export setting" onClick={add} className="-mr-1.5 size-8" />}
+      title={t('export.title')}
+      aside={<IconButton icon="plus" label={t('export.add')} onClick={add} className="-mr-1.5 size-8" />}
     >
     <div className="space-y-3">
-      <ul aria-label="Export settings" className="space-y-2">
+      <ul aria-label={t('export.settings')} className="space-y-2">
         {rows.map((r, i) => {
           const svg = r.format === 'svg';
           const open = openRow === r.id;
           return (
             <li key={r.id}>
               <div className="flex items-center gap-1.5">
-                <label className="sr-only" htmlFor={`${uid}-s${r.id}`}>Scale, row {i + 1}</label>
+                <label className="sr-only" htmlFor={`${uid}-s${r.id}`}>{t('export.scaleRow', { row: i + 1 })}</label>
                 <select
                   id={`${uid}-s${r.id}`}
                   value={effectiveScale(r)}
                   disabled={svg}
-                  title={svg ? 'SVG is vector; it exports at the chosen size' : `${pxOf(size, effectiveScale(r))}px`}
+                  title={svg ? t('export.svgFixed') : t('customize.pxValue', { value: pxOf(size, effectiveScale(r)) })}
                   onChange={(e) => patch(r.id, { scale: Number(e.target.value) as Scale })}
                   className={`${field} w-[76px]`}
                 >
                   {EXPORT_SCALES.map((s) => <option key={s} value={s}>{scaleLabel(s)}</option>)}
                 </select>
-                <label className="sr-only" htmlFor={`${uid}-f${r.id}`}>Format, row {i + 1}</label>
+                <label className="sr-only" htmlFor={`${uid}-f${r.id}`}>{t('export.formatRow', { row: i + 1 })}</label>
                 <select
                   id={`${uid}-f${r.id}`}
                   value={r.format}
@@ -137,8 +139,8 @@ export function ExportPanel({
                 </select>
                 <button
                   type="button"
-                  aria-label={`Options, row ${i + 1}`}
-                  title="Suffix"
+                  aria-label={t('export.options', { row: i + 1 })}
+                  title={t('export.suffix')}
                   aria-expanded={open}
                   aria-controls={`${uid}-o${r.id}`}
                   onClick={() => setOpenRow(open ? null : r.id)}
@@ -148,8 +150,8 @@ export function ExportPanel({
                 </button>
                 <button
                   type="button"
-                  aria-label={`Remove row ${i + 1}`}
-                  title="Remove"
+                  aria-label={t('export.remove', { row: i + 1 })}
+                  title={t('export.removeTitle')}
                   disabled={rows.length === 1}
                   onClick={() => setRows(rows.filter((x) => x.id !== r.id))}
                   className="inline-flex size-8 items-center justify-center rounded-md transition-colors hover:bg-sunken disabled:opacity-30 disabled:hover:bg-transparent"
@@ -159,11 +161,11 @@ export function ExportPanel({
               </div>
               {open && (
                 <div id={`${uid}-o${r.id}`} className="mt-1.5 flex items-center gap-2 pl-0.5">
-                  <label htmlFor={`${uid}-x${r.id}`} className="text-xs text-muted">Suffix</label>
+                  <label htmlFor={`${uid}-x${r.id}`} className="text-xs text-muted">{t('export.suffix')}</label>
                   <input
                     id={`${uid}-x${r.id}`}
                     value={r.suffix}
-                    placeholder={defaultSuffix(r, size) || 'None'}
+                    placeholder={defaultSuffix(r, size) || t('export.suffixNone')}
                     onChange={(e) => patch(r.id, { suffix: e.target.value.replace(/[\\/:*?"<>|]/g, '') })}
                     className={`${field} min-w-0 flex-1 font-mono text-xs`}
                   />
@@ -175,16 +177,16 @@ export function ExportPanel({
       </ul>
 
       <Button variant="primary" icon="download" className="h-10 w-full" disabled={disabled} onClick={exportAll}>
-        Export {name}{rows.length > 1 ? ` (${rows.length})` : ''}
+        {rows.length > 1 ? t('export.buttonMany', { name, count: rows.length }) : t('export.button', { name })}
       </Button>
       <p className="text-xs text-faint">
-        {rows.length > 1 ? `Several files download as one ZIP. ` : ''}PNGs have transparent backgrounds.
+        {rows.length > 1 ? t('export.zipNote') : ''}{t('export.pngNote')}
       </p>
 
       <div className="border-t border-line pt-3">
-        <h4 className="mb-2 text-xs text-muted">Copy</h4>
+        <h4 className="mb-2 text-xs text-muted">{t('export.copy')}</h4>
         <div className="flex items-center gap-1.5">
-          <label className="sr-only" htmlFor={`${uid}-cs`}>Copy scale</label>
+          <label className="sr-only" htmlFor={`${uid}-cs`}>{t('export.copyScale')}</label>
           <select
             id={`${uid}-cs`}
             value={copy.kind === 'png' ? copy.scale : 1}
@@ -194,21 +196,21 @@ export function ExportPanel({
           >
             {EXPORT_SCALES.map((s) => <option key={s} value={s}>{scaleLabel(s)}</option>)}
           </select>
-          <label className="sr-only" htmlFor={`${uid}-ck`}>Copy as</label>
+          <label className="sr-only" htmlFor={`${uid}-ck`}>{t('export.copyAs')}</label>
           <select
             id={`${uid}-ck`}
             value={copy.kind}
             onChange={(e) => setCopy({ ...copy, kind: e.target.value as CopyKind })}
             className={`${field} min-w-0 flex-1`}
           >
-            {COPY_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+            {COPY_KINDS.map((k) => <option key={k.value} value={k.value}>{t(k.label)}</option>)}
           </select>
           <Button icon="copy" className="h-8 px-2.5" disabled={disabled && copy.kind !== 'name'} onClick={doCopy}>
-            Copy
+            {t('export.copy')}
           </Button>
         </div>
       </div>
-      <p className="text-xs text-faint">Shift-click more icons in the grid to download several as a ZIP.</p>
+      <p className="text-xs text-faint">{t('export.multiHint')}</p>
     </div>
     </Section>
   );

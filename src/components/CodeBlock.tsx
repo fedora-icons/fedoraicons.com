@@ -1,11 +1,14 @@
+import { useI18n } from '../i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 
-const LABELS: Record<string, string> = { tsx: 'TSX', ts: 'TypeScript', sh: 'Terminal', html: 'HTML', svg: 'SVG', css: 'CSS' };
 
 /**
  * A dark code block with syntax colors. Plain text renders first; the
  * highlighter is loaded on demand and swaps in colored markup.
  */
+const CODE_LANGS = ['tsx', 'ts', 'sh', 'html', 'svg', 'css'] as const;
+type CodeLang = (typeof CODE_LANGS)[number];
+
 export function CodeBlock({ code, lang, action, className = '' }: {
   code: string;
   lang: string;
@@ -13,6 +16,7 @@ export function CodeBlock({ code, lang, action, className = '' }: {
   action?: ReactNode;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [html, setHtml] = useState<{ code: string; lang: string; value: string | null } | null>(null);
   useEffect(() => {
     let live = true;
@@ -34,7 +38,7 @@ export function CodeBlock({ code, lang, action, className = '' }: {
             <span className="size-2.5 rounded-full bg-[#28c840]" />
           </span>
         )}
-        <span>{LABELS[lang] ?? lang}</span>
+        <span>{CODE_LANGS.includes(lang as CodeLang) ? t(`code.${lang as CodeLang}`) : lang}</span>
         {action && <span className="ml-auto">{action}</span>}
       </div>
       <pre className="overflow-x-auto px-4 pb-4 pt-1 font-mono text-[13px] leading-relaxed">

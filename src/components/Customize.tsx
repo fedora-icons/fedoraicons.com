@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { palettes, type StyleId } from '../lib/catalog';
 import {
@@ -10,6 +11,7 @@ import { IconButton, Segmented, UiIcon } from './ui';
 
 export function ColorField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
   const id = useId();
+  const { t } = useI18n();
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   const valid = isHexColor(text);
@@ -17,7 +19,7 @@ export function ColorField({ label, value, onChange, hint }: { label: string; va
     <div className="flex items-center gap-3">
       <input
         type="color"
-        aria-label={`${label} picker`}
+        aria-label={t('customize.colorInput', { label })}
         value={value.length === 7 ? value : '#000000'}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
         className="size-9 shrink-0 cursor-pointer rounded-lg border border-line-strong bg-surface p-1 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
@@ -110,6 +112,7 @@ export function CustomizeControls({
   strokeFootnote?: ReactNode;
 }) {
   const { resolved: theme, setPreference } = useTheme();
+  const { t } = useI18n();
   const uid = useId();
   const duo = isDuo(style);
   const r = resolveLook(look, theme);
@@ -127,10 +130,10 @@ export function CustomizeControls({
   return (
     <>
       <Section
-        title="Size"
+        title={t('customize.size')}
         aside={(
           <label className="flex items-center gap-1.5 text-xs text-muted">
-            <span className="sr-only">Custom size in pixels</span>
+            <span className="sr-only">{t('customize.sizeCustom')}</span>
             <input
               type="number"
               inputMode="numeric"
@@ -145,11 +148,11 @@ export function CustomizeControls({
               onBlur={() => commitSize(Number(sizeText) || DEFAULT_LOOK.size)}
               className="h-7 w-14 rounded-md border border-line-strong bg-surface px-2 text-right font-mono text-xs tabular-nums text-ink"
             />
-            px
+            {t('customize.px')}
           </label>
         )}
       >
-        <label htmlFor={`${uid}-size`} className="sr-only">Size</label>
+        <label htmlFor={`${uid}-size`} className="sr-only">{t('customize.size')}</label>
         <input
           id={`${uid}-size`}
           type="range"
@@ -157,28 +160,28 @@ export function CustomizeControls({
           max={SIZE_SLIDER_MAX}
           step={SIZE_STEP}
           value={Math.min(SIZE_SLIDER_MAX, Math.max(SIZE_SLIDER_MIN, look.size))}
-          aria-valuetext={`${look.size}px`}
+          aria-valuetext={t('customize.pxValue', { value: look.size })}
           onChange={(e) => commitSize(Number(e.target.value))}
           className="range w-full"
         />
         <div className="mt-1 flex justify-between text-[11px] tabular-nums text-faint" aria-hidden="true">
-          <span>{SIZE_SLIDER_MIN}px</span>
-          <span>{SIZE_SLIDER_MAX}px</span>
+          <span>{t('customize.pxValue', { value: SIZE_SLIDER_MIN })}</span>
+          <span>{t('customize.pxValue', { value: SIZE_SLIDER_MAX })}</span>
         </div>
         {look.size > GRID_MAX_SIZE && (
-          <p className="mt-2 text-xs leading-relaxed text-faint">The grid previews up to {GRID_MAX_SIZE}px; exports use {look.size}px.</p>
+          <p className="mt-2 text-xs leading-relaxed text-faint">{t('customize.gridLimit', { max: GRID_MAX_SIZE, size: look.size })}</p>
         )}
       </Section>
 
       <Section
-        title="Stroke width"
+        title={t('customize.stroke')}
         aside={canStroke && (
           <span className="flex items-center gap-2 text-xs">
             {look.strokeWidth === null ? (
-              <span className="rounded bg-sunken px-1.5 py-0.5 font-medium text-muted">Auto</span>
+              <span className="rounded bg-sunken px-1.5 py-0.5 font-medium text-muted">{t('customize.strokeAuto')}</span>
             ) : (
               <button type="button" onClick={() => onChange({ strokeWidth: null })} className="font-medium text-brand hover:underline">
-                Use auto
+                {t('customize.strokeUseAuto')}
               </button>
             )}
             <span className="font-mono tabular-nums text-ink">{fmtStroke(stroke)}</span>
@@ -187,7 +190,7 @@ export function CustomizeControls({
       >
         {canStroke ? (
           <>
-            <label htmlFor={`${uid}-stroke`} className="sr-only">Stroke width</label>
+            <label htmlFor={`${uid}-stroke`} className="sr-only">{t('customize.stroke')}</label>
             <input
               id={`${uid}-stroke`}
               type="range"
@@ -195,7 +198,7 @@ export function CustomizeControls({
               max={STROKE_MAX}
               step={STROKE_STEP}
               value={stroke}
-              aria-valuetext={`${fmtStroke(stroke)}${look.strokeWidth === null ? ', automatic for this size' : ''}`}
+              aria-valuetext={look.strokeWidth === null ? t('customize.strokeAutoValue', { value: fmtStroke(stroke) }) : fmtStroke(stroke)}
               onChange={(e) => onChange({ strokeWidth: Number(e.target.value) })}
               className="range w-full"
             />
@@ -205,34 +208,34 @@ export function CustomizeControls({
             </div>
             <p className="mt-2 text-xs leading-relaxed text-faint">
               {look.strokeWidth === null
-                ? `Auto follows the size: ${fmtStroke(BASE_STROKE)} at 24px, ${fmtStroke(autoStroke(64))} at 64px. Measured on the 24px grid.`
-                : 'Fixed at your value for every size. Measured on the 24px grid.'}
+                ? t('customize.strokeAutoHelp', { base: fmtStroke(BASE_STROKE), large: fmtStroke(autoStroke(64)) })
+                : t('customize.strokeFixedHelp')}
             </p>
             {strokeFootnote}
           </>
         ) : (
           <p className="text-xs leading-relaxed text-faint">
-            {kind === 'brand' ? 'Brand marks are shown exactly as provided.' : 'Solid icons are filled shapes, so they have no stroke to adjust.'}
+            {kind === 'brand' ? t('customize.strokeBrand') : t('customize.strokeSolid')}
           </p>
         )}
       </Section>
 
       <Section
-        title="Color"
+        title={t('customize.color')}
         aside={duo && (
           <Segmented
-            label="Palette variant"
+            label={t('customize.paletteVariant')}
             size="sm"
             value={r.mode}
             // The variant is previewed on the matching background: switch the site theme.
             onChange={(v) => { setPreference(v); onChange({ custom: null }); }}
-            options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+            options={[{ value: 'light', label: t('theme.light') }, { value: 'dark', label: t('theme.dark') }]}
           />
         )}
       >
         {duo ? (
           <div className="space-y-3">
-            <div role="radiogroup" aria-label="Duo palette" className="flex flex-wrap gap-1.5">
+            <div role="radiogroup" aria-label={t('customize.duoPalette')} className="flex flex-wrap gap-1.5">
               {palettes.palettes.map((p) => {
                 const checked = !look.custom && p.name === r.palette.name;
                 return (
@@ -254,25 +257,25 @@ export function CustomizeControls({
                 );
               })}
             </div>
-            <ColorField label="Primary" value={r.duo.primary} onChange={(v) => onChange({ custom: { ...r.duo, primary: v } })} />
+            <ColorField label={t('customize.primary')} value={r.duo.primary} onChange={(v) => onChange({ custom: { ...r.duo, primary: v } })} />
             {style === 'duocolor' && (
-              <ColorField label="Secondary" value={r.duo.secondary} onChange={(v) => onChange({ custom: { ...r.duo, secondary: v } })} />
+              <ColorField label={t('customize.secondary')} value={r.duo.secondary} onChange={(v) => onChange({ custom: { ...r.duo, secondary: v } })} />
             )}
             {style === 'duotone' && (
-              <p className="text-xs leading-relaxed text-faint">Duotone keeps its 16% interior tint of the primary color.</p>
+              <p className="text-xs leading-relaxed text-faint">{t('customize.duotoneTint')}</p>
             )}
             {footnote}
             <p className="text-xs text-faint">
-              {look.custom ? 'Custom colors' : `${r.palette.name} · ${r.mode === 'light' ? 'Light' : 'Dark'}`}. Light and Dark also switch the site, so you see the palette on its background.
+              {t('customize.paletteNote', { current: look.custom ? t('customize.customColors') : t('customize.paletteMode', { palette: r.palette.name, mode: t(`theme.${r.mode}`) }) })}
             </p>
           </div>
         ) : (
           <>
             <ColorField
-              label="Foreground"
+              label={t('customize.foreground')}
               value={r.mono}
               onChange={(v) => onChange({ mono: v })}
-              hint={look.mono ? undefined : 'Following the site theme.'}
+              hint={look.mono ? undefined : t('customize.followTheme')}
             />
             {footnote}
           </>
@@ -295,16 +298,17 @@ export function CustomizePanel({
   kind: 'core' | 'brand';
   headingId: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex items-start gap-3 px-5 pb-4 pt-5">
         <div className="min-w-0 flex-1">
-          <h2 id={headingId} tabIndex={-1} className="text-xl font-semibold outline-none">Customize</h2>
+          <h2 id={headingId} tabIndex={-1} className="text-xl font-semibold outline-none">{t('customize.title')}</h2>
           <p className="mt-1 text-sm text-muted">
-            Applies to every icon in the grid and carries into exports. Select an icon to download or copy it.
+            {t('customize.intro')}
           </p>
         </div>
-        {onClose && <IconButton icon="x" label="Close customize" onClick={onClose} className="-mr-2 -mt-1" />}
+        {onClose && <IconButton icon="x" label={t('customize.close')} onClick={onClose} className="-mr-2 -mt-1" />}
       </div>
       <CustomizeControls look={look} onChange={onChange} style={style} kind={kind} />
       <div className="border-t border-line px-5 py-4">
@@ -315,7 +319,7 @@ export function CustomizePanel({
           className="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:text-faint disabled:no-underline"
         >
           <UiIcon name="undo" className="size-4" />
-          Reset to defaults
+          {t('customize.reset')}
         </button>
       </div>
     </div>
