@@ -43,8 +43,12 @@ export function ColorField({ label, value, onChange, hint }: { label: string; va
   );
 }
 
+/** Open/closed state per section title, kept while the page is open, so it survives switching icons. */
+const sectionOpen = new Map<string, boolean>();
+export const resetSectionState = () => sectionOpen.clear();
+
 export function Section({
-  title, children, aside, collapsible = false, defaultOpen = true,
+  title, children, aside, collapsible = true, defaultOpen = true,
 }: {
   title: string;
   children: ReactNode;
@@ -53,7 +57,12 @@ export function Section({
   collapsible?: boolean;
   defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpenState] = useState(() => sectionOpen.get(title) ?? defaultOpen);
+  const setOpen = (update: (o: boolean) => boolean) => setOpenState((o) => {
+    const next = update(o);
+    sectionOpen.set(title, next);
+    return next;
+  });
   const bodyId = useId();
   const heading = 'font-sans text-xs font-semibold uppercase tracking-[0.08em] text-muted';
   const expanded = !collapsible || open;

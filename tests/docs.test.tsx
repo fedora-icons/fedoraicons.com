@@ -24,4 +24,14 @@ describe('Docs page', () => {
     expect(blocks.length).toBeGreaterThan(0);
     expect(document.querySelector('.code-block[data-lang="sh"]')?.textContent).toMatch(/^Terminal/);
   });
+
+  it('documents what the site stores in a Privacy section', () => {
+    render(<ToastProvider><MemoryRouter><DocsPage /></MemoryRouter></ToastProvider>);
+    const nav = screen.getByRole('navigation', { name: 'Documentation' });
+    expect(within(nav).getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe('#privacy');
+    const section = document.getElementById('privacy')!;
+    expect(section.textContent).toMatch(/no cookies/);
+    expect(section.textContent).toContain('fedora-theme');
+    expect(section.textContent).toContain('fedora-pane-collapsed');
+  });
 });
