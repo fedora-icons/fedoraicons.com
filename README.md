@@ -91,8 +91,9 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 - **Side pane sections** collapse and expand; the choice holds while you
   switch icons.
 - **Brands**: the last option in the style switcher (`/?style=brands`; the old
-  `/brands` URL redirects). Regular/Solid only, gated by `src/data/brands.json`.
-  It is empty until assets are approved, so it shows a deliberate empty state.
+  `/brands` URL redirects). The 32 approved third-party marks (social, Google,
+  Microsoft) synced from the library's `brand-assets/`, shown unmodified in
+  Regular; the Solid switch appears once a brand ships a Solid source.
 - **Header**: Get started (the library on GitHub, new tab), Download (one ZIP
   of every core icon in every style, untouched library SVGs in `regular/`,
   `solid/`, `duocolor/`, `duotone/`, plus LICENSE and README, built in the
@@ -114,7 +115,7 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
 scripts/sync-icons.mjs    verified library -> data snapshot
 scripts/postbuild.mjs     static route entry points + 404.html
 public/icons/<style>.json one lazily fetched SVG map per style (generated)
-src/data/*.json           catalog, palettes, UI glyphs, source lock (generated), brands (hand-edited)
+src/data/*.json           catalog, palettes, UI glyphs, source lock (generated), brands (generated)
 src/brand/                Fedora Icons mark (from Figma; see its README)
 src/lib/                  svg export, search, URL state, look (customization), brands, React snippet, theme
 src/components/           layout, grid, side pane + inspector, customize controls, UI primitives

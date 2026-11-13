@@ -50,6 +50,9 @@ const fetchMock = vi.fn(async (url: string) => {
   if (url.endsWith('modifiers.json')) {
     return new Response(readFileSync(join(__dirname, '../public/modifiers.json'), 'utf8'), { status: 200 });
   }
+  if (url.includes('brands/')) {
+    return new Response(readFileSync(join(__dirname, '../public', url.slice(url.indexOf('brands/'))), 'utf8'), { status: 200 });
+  }
   const style = /icons\/(\w+)\.json/.exec(url)![1] as 'regular';
   return new Response(JSON.stringify(styleSvgs(style)), { status: 200 });
 });
@@ -212,17 +215,31 @@ describe('Icons page', () => {
     expect(within(footer).getByRole('link', { name: /GitHub/ })).toBeTruthy();
   });
 
-  it('offers Brands as the last style option and shows the empty state', async () => {
+  it('offers Brands as the last style option with the approved marks', async () => {
     const user = userEvent.setup();
-    renderAt('/?q=arrow');
+    renderAt('/?q=twitter');
     const switcher = screen.getByRole('radiogroup', { name: 'Icon style' });
     const labels = within(switcher).getAllByRole('radio').map((r) => r.textContent);
     expect(labels).toEqual(['Regular', 'Solid', 'Duocolor', 'Duotone', 'Brands']);
     await user.click(within(switcher).getByRole('radio', { name: 'Brands' }));
-    expect(location).toBe('?q=arrow&style=brands');
-    expect(screen.getByRole('heading', { name: 'No brand icons are available yet' })).toBeTruthy();
+    expect(location).toBe('?q=twitter&style=brands');
     expect(screen.getByText('All brand icons belong to their respective owners.')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Search brands' })).toBeTruthy();
+    // No brand ships Solid yet, so there is no Regular/Solid switch.
+    expect(screen.queryByRole('radiogroup', { name: 'Brand style' })).toBeNull();
+    // X is found by its former name.
+    const grid = screen.getByRole('list', { name: 'Brand icons' });
+    await vi.waitFor(() => expect(grid.querySelector('svg')).toBeTruthy());
+    expect(within(grid).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['x']);
+  });
+
+  it('namespaces brand IDs so marks sharing gradient IDs do not collide', async () => {
+    const { loadBrands } = await import('../src/lib/brands');
+    const svgs = await loadBrands('regular');
+    expect(Object.keys(svgs)).toHaveLength(32);
+    const ids = Object.values(svgs).flatMap((svg) => [...svg.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(svgs['google-chrome']).toMatch(/id="brand-google-chrome-regular-0"/);
   });
 });
 

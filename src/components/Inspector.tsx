@@ -161,7 +161,7 @@ export function Inspector({
       <div className="px-5 pb-2">
         <div className="checkerboard flex h-[200px] items-center justify-center rounded-2xl border border-line">
           {preview ? (
-            <span role="img" aria-label={`${icon.name}, ${STYLE_META[style].label}, scaled preview`} className="glyph size-40" dangerouslySetInnerHTML={{ __html: preview.large }} />
+            <span role="img" aria-label={`${icon.name}, ${STYLE_META[style].label}, scaled preview`} data-artwork className="glyph size-40" dangerouslySetInnerHTML={{ __html: preview.large }} />
           ) : (
             <span className="size-40 animate-pulse rounded-2xl bg-sunken" />
           )}
@@ -177,13 +177,13 @@ export function Inspector({
         <div className="grid grid-cols-2 gap-2 pt-1">
           <figure className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
             <span className="checkerboard flex size-10 items-center justify-center rounded-lg">
-              {preview && <span className="glyph size-6" dangerouslySetInnerHTML={{ __html: preview.native }} />}
+              {preview && <span data-artwork className="glyph size-6" dangerouslySetInnerHTML={{ __html: preview.native }} />}
             </span>
             <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">24px</strong>Native master</figcaption>
           </figure>
           <figure className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
             <span className="checkerboard flex size-10 items-center justify-center overflow-hidden rounded-lg">
-              {preview && <span className="glyph" style={{ width: Math.min(size, 128), height: Math.min(size, 128) }} dangerouslySetInnerHTML={{ __html: preview.actual }} />}
+              {preview && <span data-artwork className="glyph" style={{ width: Math.min(size, 128), height: Math.min(size, 128) }} dangerouslySetInnerHTML={{ __html: preview.actual }} />}
             </span>
             <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{size}px</strong>{size === 24 ? 'Selected size' : 'Scaled'}</figcaption>
           </figure>

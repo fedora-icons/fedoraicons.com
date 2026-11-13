@@ -41,26 +41,25 @@ is hard-coded.
 
 ## Brands
 
-`src/data/brands.json` is hand-maintained and starts empty. Figma reference
-drawings (for example `figma`, `framer`, `youtube`) are **not** approved for
-distribution and must not be added.
+Brand marks come from the library's `brand-assets/`, not from this repo. The
+library records each mark's owner, official source, SHA-256 digest, retrieval
+date, and shared rights notes in `brand-assets/manifest.json`; see its
+`BRANDS.md`. `npm run sync` verifies every digest, copies each SVG unmodified to
+`public/brands/<name>-regular.svg`, and generates `src/data/brands.json`. Do not
+edit either by hand.
 
-To publish a brand icon, an approver must first confirm the owner's official
-source and redistribution terms. Then:
+To add or change a brand, update `brand-assets/` in the library (an approver
+must first confirm the owner's official source and redistribution terms), then
+re-sync. Names come from the file path (`social/x.svg` is `x`; product marks
+are prefixed with their owner, e.g. `google-chrome`), with overrides and
+search aliases in `BRAND_META` in `scripts/sync-icons.mjs`.
 
-1. Add the unmodified Regular (and Solid, if one exists) SVG under `public/brands/`.
-2. Add an entry to `approved`:
+The website namespaces each mark's IDs when it loads them, so marks that share
+gradient or clip-path IDs can sit on one page; the downloaded files are the
+library files as provided. Figma reference drawings (for example `figma`,
+`framer`, `youtube`) are **not** approved for distribution and must not be
+added.
 
-```json
-{
-  "name": "example",
-  "owner": "Example Inc.",
-  "category": "Social",
-  "officialSource": "https://example.com/brand",
-  "retrieved": "2026-11-11",
-  "terms": "https://example.com/brand/terms",
-  "files": { "regular": "brands/example-regular.svg", "filled": "brands/example-filled.svg" }
-}
-```
-
-Brands never get Duocolor or Duotone styles, and they are not part of the MIT core.
+Brands never get Duocolor or Duotone styles, and they are not part of the MIT
+core or the React and Vue packages. A Solid style appears only once a brand
+ships a Solid source.

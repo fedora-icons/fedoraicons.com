@@ -5,7 +5,7 @@ import { GridHelp, IconGrid } from '../components/IconGrid';
 import { Inspector, SidePane } from '../components/Inspector';
 import { SelectionPanel } from '../components/SelectionPanel';
 import { Button, Segmented, UiIcon } from '../components/ui';
-import { brandCategories, brandEntries, brands, hasBrandStyle, loadBrands } from '../lib/brands';
+import { availableBrandStyles, brandCategories, brandEntries, brands, hasBrandStyle, loadBrands } from '../lib/brands';
 import { catalog, iconsByName, loadStyle, STYLE_META, type StyleId } from '../lib/catalog';
 import { CONTAINER, usePaneHost } from '../lib/layout';
 import { DEFAULT_LOOK, gridVars, type Look } from '../lib/look';
@@ -13,7 +13,7 @@ import { createIndex, search } from '../lib/search';
 import { prepareGridSvg } from '../lib/svg';
 import { useMediaQuery, useTheme } from '../lib/theme';
 import {
-  BRAND_STYLES, parseState, serializeState, type CatalogState, type UrlStateConfig, type View,
+  parseState, serializeState, type CatalogState, type UrlStateConfig, type View,
 } from '../lib/url-state';
 
 const coreIndex = createIndex(catalog.icons);
@@ -26,7 +26,7 @@ const config: UrlStateConfig = {
 };
 const VIEW_OPTIONS: { value: View; label: string; title?: string }[] = [
   ...catalog.styles.map((s) => ({ value: s as View, label: STYLE_META[s].label, title: STYLE_META[s].description })),
-  { value: 'brands', label: 'Brands', title: 'Brand icons in Regular and Solid' },
+  { value: 'brands', label: 'Brands', title: 'Third-party brand marks, shown as provided' },
 ];
 const nf = new Intl.NumberFormat('en-US');
 const COLLAPSE_KEY = 'fedora-pane-collapsed';
@@ -170,9 +170,11 @@ export function IconsPage() {
 
   const brandsView = state.style === 'brands';
   const kind = brandsView ? 'brand' as const : 'core' as const;
+  /** A shared Solid link falls back to Regular while no brand ships Solid. */
+  const brandStyle = availableBrandStyles.includes(state.brandStyle) ? state.brandStyle : availableBrandStyles[0] ?? 'regular';
   /** The artwork style actually drawn: a core style, or Regular/Solid within Brands. */
-  const drawStyle: StyleId = brandsView ? state.brandStyle : state.style as StyleId;
-  const svgKey = brandsView ? `brands:${state.brandStyle}` : drawStyle;
+  const drawStyle: StyleId = brandsView ? brandStyle : state.style as StyleId;
+  const svgKey = brandsView ? `brands:${brandStyle}` : drawStyle;
 
   const update = useCallback((patch: Partial<CatalogState>, replace = false) => {
     setParams(serializeState({ ...state, ...patch }, config), { replace, preventScrollReset: true });
@@ -184,21 +186,28 @@ export function IconsPage() {
   }, []);
   const changeLook = useCallback((patch: Partial<Look>) => setLook((l) => ({ ...l, ...patch })), []);
 
+  // Brand marks are shown as provided, so dark ones get a light backing tile
+  // in the dark theme (grid, side pane, and sheet) rather than being recolored.
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-brand-marks', brandsView);
+    return () => document.documentElement.removeAttribute('data-brand-marks');
+  }, [brandsView]);
+
   useEffect(() => {
     if (brandsView && brandEntries.length === 0) return;
     let cancelled = false;
     setError(null);
-    (brandsView ? loadBrands(state.brandStyle) : loadStyle(drawStyle))
+    (brandsView ? loadBrands(brandStyle) : loadStyle(drawStyle))
       .then((data) => { if (!cancelled) setSvgs((s) => ({ ...s, [svgKey]: data })); })
       .catch((e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load icons.'); });
     return () => { cancelled = true; };
-  }, [brandsView, state.brandStyle, drawStyle, svgKey, attempt]);
+  }, [brandsView, brandStyle, drawStyle, svgKey, attempt]);
 
   const index = brandsView ? brandIndex : coreIndex;
   const results = useMemo(() => {
     const found = search(index, state.q, state.category);
-    return brandsView ? found.filter((e) => hasBrandStyle(e.name, state.brandStyle)) : found;
-  }, [index, state.q, state.category, brandsView, state.brandStyle]);
+    return brandsView ? found.filter((e) => hasBrandStyle(e.name, brandStyle)) : found;
+  }, [index, state.q, state.category, brandsView, brandStyle]);
   const elsewhere = useMemo(
     () => (state.category && state.q && results.length === 0 ? search(index, state.q).length : 0),
     [index, state.q, state.category, results.length],
@@ -301,12 +310,12 @@ export function IconsPage() {
           }}
           options={VIEW_OPTIONS}
         />
-        {brandsView && brandEntries.length > 0 && (
+        {brandsView && availableBrandStyles.length > 1 && (
           <Segmented
             label="Brand style"
-            value={state.brandStyle}
+            value={brandStyle}
             onChange={(brandStyle) => update({ brandStyle })}
-            options={BRAND_STYLES.map((s) => ({ value: s, label: STYLE_META[s].label }))}
+            options={availableBrandStyles.map((s) => ({ value: s, label: STYLE_META[s].label }))}
           />
         )}
         {(!brandsView || brandEntries.length > 0) && (
@@ -413,7 +422,7 @@ export function IconsPage() {
             kind={kind}
             icon={selected}
             style={drawStyle}
-            styles={brandsView ? BRAND_STYLES : catalog.styles}
+            styles={brandsView ? availableBrandStyles.filter((s) => hasBrandStyle(selected.name, s)) : catalog.styles}
             source={styleSvgs?.[selected.name]}
             look={look}
             onLookChange={changeLook}

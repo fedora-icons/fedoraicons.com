@@ -101,7 +101,7 @@ export function SelectionPanel({
                 className="group relative flex aspect-square w-full items-center justify-center rounded-xl bg-sunken text-ink transition-colors hover:bg-line"
               >
                 {thumbs?.[i] ? (
-                  <span className="glyph size-6" dangerouslySetInnerHTML={{ __html: thumbs[i]! }} />
+                  <span data-artwork className="glyph size-6" dangerouslySetInnerHTML={{ __html: thumbs[i]! }} />
                 ) : (
                   <span className="size-6 animate-pulse rounded-md bg-line" />
                 )}
