@@ -231,6 +231,12 @@ describe('Icons page', () => {
     expect(within(footer).queryByRole('link', { name: 'Docs' })).toBeNull();
     expect(within(footer).getByRole('link', { name: /GitHub/ })).toBeTruthy();
     expect(within(footer).getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe('/docs#privacy');
+    expect(within(footer).getByRole('link', { name: 'License' }).getAttribute('href')).toBe('/docs#licensing');
+    const credit = within(footer).getByRole('link', { name: /^Joel/ });
+    expect(credit.closest('p')!.textContent).toBe('Built by Joel (opens in a new tab)');
+    expect(credit.getAttribute('href')).toBe('https://x.com/joelm6u9');
+    expect(credit.getAttribute('target')).toBe('_blank');
+    expect(footer.textContent).not.toMatch(/Library [0-9a-f]{7}|licensed separately|MIT licensed/);
   });
 
   it('offers Brands as the last style option with the approved marks', async () => {

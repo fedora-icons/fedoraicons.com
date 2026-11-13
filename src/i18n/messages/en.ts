@@ -42,10 +42,8 @@ const en = {
   'footer.nav': 'Footer',
   'footer.privacy': 'Privacy',
   'footer.github': 'GitHub',
-  'footer.license': 'Core icons are <link>MIT licensed</link>. Brand icons are licensed separately.',
-  'footer.library': 'Library {revision}',
-  'footer.libraryUnknown': 'unknown',
-  'footer.localChanges': ' + local changes',
+  'footer.license': 'License',
+  'footer.builtBy': 'Built by <link>Joel</link>',
   'footer.language': 'Language',
 
   // Theme
