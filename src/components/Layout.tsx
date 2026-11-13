@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { LocalLink, useI18n } from '../i18n';
 import markRegular from '../brand/mark-regular.svg?raw';
-import { lock } from '../lib/catalog';
 import { CONTAINER, PaneHostContext } from '../lib/layout';
-import { LIBRARY_URL } from '../lib/links';
+import { LIBRARY_URL, NPM_URL } from '../lib/links';
 import { useDocumentMeta } from '../lib/useDocumentMeta';
 import { HeaderActions } from './HeaderActions';
 import { LanguageMenu } from './LanguageMenu';
@@ -16,7 +15,7 @@ const footerLink = 'inline-flex items-center gap-1 rounded text-muted underline-
 export function Layout() {
   const [paneHost, setPaneHost] = useState<HTMLElement | null>(null);
   useDocumentMeta();
-  const { t, rich } = useI18n();
+  const { t } = useI18n();
   const { pathname } = useLocation();
   return (
     <PaneHostContext.Provider value={paneHost}>
@@ -48,19 +47,20 @@ export function Layout() {
             <div className={`${CONTAINER} flex flex-col gap-3 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between`}>
               <nav aria-label={t('footer.nav')} className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 <LocalLink to="/docs#privacy" className={footerLink}>{t('footer.privacy')}</LocalLink>
-                <a href={LIBRARY_URL} className={footerLink}>
-                  {t('footer.github')} <UiIcon name="link-external" className="size-3.5" />
-                </a>
-                <span>
-                  {rich('footer.license', {
-                    link: (text) => <a className="underline underline-offset-2 hover:text-ink" href="/licenses/fedora-icons-LICENSE.txt">{text}</a>,
-                  })}
-                </span>
+                <LocalLink to="/docs#licensing" className={footerLink}>{t('footer.license')}</LocalLink>
                 <LanguageMenu />
               </nav>
-              <p className="font-mono text-xs text-faint">
-                {t('footer.library', { revision: lock.revision ? lock.revision.slice(0, 7) : t('footer.libraryUnknown') })}{lock.dirty ? t('footer.localChanges') : ''}
-              </p>
+              <nav aria-label={t('footer.elsewhere')} className="flex items-center gap-3">
+                <a href={LIBRARY_URL} target="_blank" rel="noreferrer" className={footerLink}>
+                  {t('footer.github')} <UiIcon name="link-external" className="size-3.5" />
+                  <span className="sr-only">{t('site.newTab')}</span>
+                </a>
+                <span aria-hidden="true" className="text-line-strong">|</span>
+                <a href={NPM_URL} target="_blank" rel="noreferrer" className={footerLink}>
+                  {t('footer.npm')} <UiIcon name="link-external" className="size-3.5" />
+                  <span className="sr-only">{t('site.newTab')}</span>
+                </a>
+              </nav>
             </div>
           </footer>
         </div>

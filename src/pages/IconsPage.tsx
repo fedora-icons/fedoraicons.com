@@ -126,7 +126,7 @@ function BrandsEmpty() {
         {t('brands.emptyBody')}
       </p>
       <p className="mt-5 text-sm">
-        <a className="text-brand underline underline-offset-2" href="https://github.com/fedora-icons/fedora-icons/blob/main/BRANDS.md">
+        <a className="text-brand underline underline-offset-2" target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/fedora-icons/blob/main/BRANDS.md">
           {t('brands.policy')}
         </a>
         <span className="mx-2 text-faint">·</span>

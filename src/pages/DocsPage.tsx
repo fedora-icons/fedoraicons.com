@@ -171,14 +171,14 @@ export default function DocsPage() {
         </Section>
 
         <Section id="svg" title="SVG">
-          <p>Download an icon from the inspector, or copy files from <code>icons/regular/</code>, <code>icons/filled/</code>, <code>icons/duocolor/</code>, or <code>icons/duotone/</code> in the <a href="https://github.com/fedora-icons/fedora-icons">library repository</a>. There is no runtime dependency or icon font.</p>
+          <p>Download an icon from the inspector, or copy files from <code>icons/regular/</code>, <code>icons/filled/</code>, <code>icons/duocolor/</code>, or <code>icons/duotone/</code> in the <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/fedora-icons">library repository</a>. There is no runtime dependency or icon font.</p>
           <Code lang="html">{`<img src="./icons/regular/text-align-left.svg" width="24" height="24" alt="Align text left">`}</Code>
           <p>To theme with CSS, inline the markup instead: the library&apos;s <code>currentColor</code> follows the parent element&apos;s <code>color</code>. Don&apos;t globally override <code>fill</code> on paths — Solid icons rely on real transparent cutouts.</p>
           <p><strong>Website downloads are standalone.</strong> Files exported here have every color resolved to a concrete value, so they render the same in any viewer or design tool. Masks, clip paths, and the Duotone tint are kept intact. If you want live theming, use the library SVGs.</p>
         </Section>
 
         <Section id="react" title="React">
-          <p><a href="https://www.npmjs.com/package/@fedora-icons/react"><code>@fedora-icons/react</code></a> is on npm. It supports React 18 and 19, ships TypeScript types, and tree-shakes to the icons you import. Source: <a href="https://github.com/fedora-icons/react-fedora">fedora-icons/react-fedora</a>.</p>
+          <p><a target="_blank" rel="noreferrer" href="https://www.npmjs.com/package/@fedora-icons/react"><code>@fedora-icons/react</code></a> is on npm. It supports React 18 and 19, ships TypeScript types, and tree-shakes to the icons you import. Source: <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/react-fedora">fedora-icons/react-fedora</a>.</p>
           <Code lang="sh">{`npm install @fedora-icons/react`}</Code>
           <p>Each style is a separate component: the canonical name in PascalCase plus a style suffix. <code>fuel-pump</code> becomes <code>FuelPumpRegular</code>, <code>FuelPumpFilled</code>, <code>FuelPumpDuocolor</code>, and <code>FuelPumpDuotone</code>. Solid icons use the <code>Filled</code> suffix. Names starting with a digit get an <code>Icon</code> prefix.</p>
           <Code lang="tsx">{`import { CameraRegular, CameraDuocolor } from '@fedora-icons/react';
@@ -267,7 +267,7 @@ export default function DocsPage() {
         </Section>
 
         <Section id="source" title="Source data">
-          <p>This site is generated from the <a href="https://github.com/fedora-icons/fedora-icons">fedora-icons</a> library. Counts, categories, names, and aliases come from its manifest.</p>
+          <p>This site is generated from the <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/fedora-icons">fedora-icons</a> library. Counts, categories, names, and aliases come from its manifest.</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-line p-4 font-mono text-xs text-muted">
             <dt>Revision</dt><dd className="break-all text-ink">{lock.revision ?? 'unknown'}{lock.dirty ? ' (with uncommitted changes)' : ''}</dd>
             <dt>Manifest</dt><dd className="break-all text-ink">sha256:{lock.manifestSha256}</dd>
