@@ -88,24 +88,25 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   styles), but the base is not refitted, so the badge may cover detail. They
   are labeled as previews, and downloads and copies include them. When a
   designed library version exists, the pane links to it.
+- **Side pane width**: drag the pane's left edge (or focus it and use the
+  arrow keys, Home/End; Enter or double-click resets). The width is kept on
+  this device as `fedora-pane-width`.
 - **Side pane sections** collapse and expand; the choice holds while you
   switch icons.
 - **Brands**: the last option in the style switcher (`/?style=brands`; the old
   `/brands` URL redirects). The 32 approved third-party marks (social, Google,
   Microsoft) synced from the library's `brand-assets/`, shown unmodified in
   Regular; the Solid switch appears once a brand ships a Solid source.
-- **Header**: Get started (the library on GitHub, new tab), Download (one ZIP
+- **Header**: Get started (the library on GitHub, new tab), Docs, Download (one ZIP
   of every core icon in every style, untouched library SVGs in `regular/`,
   `solid/`, `duocolor/`, `duotone/`, plus LICENSE and README, built in the
   browser from the pinned snapshot), Figma (the Figma file,
-  new tab; `FIGMA_URL` in `src/lib/links.ts`), and Pricing. Phones get a menu.
-- **Pricing** (`/pricing`): a placeholder. It names no plans or prices; it says
-  pricing is coming and that the current set is free under the library license.
+  new tab; `FIGMA_URL` in `src/lib/links.ts`). Phones get a menu.
 - **Code samples**: dark in both themes, with syntax colors (highlight.js
   core with TSX, HTML, CSS, and shell, loaded on demand). Shell samples are
   shown as a terminal.
-- **Docs** (linked from the footer, with GitHub): SVG, React, Figma, colors, sizes, modifiers, accessibility,
-  licensing, privacy (no cookies or tracking; the two local-storage
+- **Docs** (in the header; the footer keeps Privacy and GitHub): SVG, React, Figma, colors, sizes, modifiers, accessibility,
+  licensing, privacy (no cookies or tracking; the three local-storage
   preferences, named), and source revision. The footer links to Privacy. The side nav marks the section being read,
   and in-page links scroll smoothly (instantly with reduced motion).
 - **No results**: says what was searched, suggests close matches (typos and
@@ -167,6 +168,9 @@ The site is built for several languages; it ships in English today.
 
 ## Speed and offline
 
+- The grid mounts its first 96 cells, then another 96 whenever you scroll
+  near the end (or all at once for keyboard jumps and deep selections), so
+  a phone never lays out 1,252 cells up front.
 - Icon artwork loads in 96-icon chunks (`public/icons/<style>/<n>.json`) as
   cells approach the viewport; the first chunk is preloaded with the page.
   Off-screen cells skip rendering (`content-visibility`).
@@ -190,7 +194,7 @@ src/data/*.json           catalog, palettes, UI glyphs, source lock (generated),
 src/brand/                Fedora Icons mark (from Figma; see its README)
 src/lib/                  svg export, search, URL state, look (customization), brands, React snippet, theme
 src/components/           layout, grid, side pane + inspector, customize controls, UI primitives
-src/pages/                Icons (core styles and Brands), Docs, Pricing, 404
+src/pages/                Icons (core styles and Brands), Docs, 404
 src/entry-server.tsx      build-time prerender entry
 src/i18n/                 languages, messages, translator, localized Docs
 tests/                    Vitest suites

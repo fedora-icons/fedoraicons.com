@@ -33,5 +33,6 @@ describe('Docs page', () => {
     expect(section.textContent).toMatch(/no cookies/);
     expect(section.textContent).toContain('fedora-theme');
     expect(section.textContent).toContain('fedora-pane-collapsed');
+    expect(section.textContent).toContain('fedora-pane-width');
   });
 });

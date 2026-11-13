@@ -27,7 +27,7 @@ export const facts = {
   license: catalog.license,
 };
 
-export type PageId = 'home' | 'docs' | 'pricing' | 'brands' | 'not-found';
+export type PageId = 'home' | 'docs' | 'brands' | 'not-found';
 
 export interface PageMeta {
   id: PageId;
@@ -39,11 +39,10 @@ export interface PageMeta {
   noindex?: boolean;
 }
 
-const PATHS: Record<PageId, string> = { home: '/', docs: '/docs', pricing: '/pricing', brands: '/brands', 'not-found': '/404' };
+const PATHS: Record<PageId, string> = { home: '/', docs: '/docs', brands: '/brands', 'not-found': '/404' };
 const META_KEYS = {
   home: ['meta.home.title', 'meta.home.description'],
   docs: ['meta.docs.title', 'meta.docs.description'],
-  pricing: ['meta.pricing.title', 'meta.pricing.description'],
   brands: ['meta.brands.title', 'meta.brands.description'],
   'not-found': ['meta.notFound.title', 'meta.notFound.description'],
 } as const satisfies Record<PageId, readonly [MessageKey, MessageKey]>;
@@ -71,7 +70,6 @@ export function pageIdFor(pathname: string, search = ''): PageId {
   const path = splitLocale(pathname).path.replace(/\/+$/, '') || '/';
   if (path === '/') return new URLSearchParams(search).get('style') === 'brands' ? 'brands' : 'home';
   if (path === '/docs') return 'docs';
-  if (path === '/pricing') return 'pricing';
   if (path === '/brands') return 'brands';
   return 'not-found';
 }

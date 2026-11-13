@@ -68,6 +68,7 @@ export function HeaderActions() {
         <a href={LIBRARY_URL} target="_blank" rel="noreferrer" className={`${linkBase} text-brand`}>
           {t('header.getStarted')}{NEW_TAB}
         </a>
+        <LocalLink to="/docs" className={textLink}>{t('header.docs')}</LocalLink>
         <button type="button" className={textLink} onClick={download.run} disabled={download.busy} aria-describedby="download-all-desc">
           {downloadLabel}
         </button>
@@ -76,7 +77,6 @@ export function HeaderActions() {
             {t('header.figma')}{NEW_TAB}
           </a>
         )}
-        <LocalLink to="/pricing" className={textLink}>{t('header.pricing')}</LocalLink>
       </nav>
       <span id="download-all-desc" className="sr-only">{t('header.downloadDescription')}</span>
 
@@ -101,6 +101,10 @@ export function HeaderActions() {
           <a href={LIBRARY_URL} target="_blank" rel="noreferrer" onClick={close} className={`${primary} w-full`}>
             {t('header.getStarted')}{NEW_TAB}
           </a>
+          <LocalLink to="/docs" onClick={close} className={`${ghost} w-full justify-start`}>
+            <UiIcon name="book-open" className="size-[18px]" />
+            {t('header.docs')}
+          </LocalLink>
           <button type="button" className={`${ghost} w-full justify-start`} onClick={download.run} disabled={download.busy} aria-describedby="download-all-desc">
             <UiIcon name="download" className="size-[18px]" />
             {downloadLabel}
@@ -110,7 +114,6 @@ export function HeaderActions() {
               {t('header.figma')}{NEW_TAB}
             </a>
           )}
-          <LocalLink to="/pricing" onClick={close} className={`${ghost} w-full justify-start`}>{t('header.pricing')}</LocalLink>
         </nav>
       </div>
     </>
