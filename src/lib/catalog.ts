@@ -53,6 +53,13 @@ export const STYLE_META: Record<StyleId, { label: string; slug: string; descript
 export const styleFromSlug = (slug: string | null, allowed: readonly StyleId[] = catalog.styles) =>
   allowed.find((s) => STYLE_META[s].slug === slug) ?? null;
 
+/**
+ * The icon count for copy, rounded down to the hundred and shown as "1,200+",
+ * so text stays true as icons are added. Use catalog.icons.length where the
+ * exact number matters (result counts, exports).
+ */
+export const ICONS_ROUNDED = Math.floor(catalog.icons.length / 100) * 100;
+
 export const iconsByName = new Map(catalog.icons.map((icon) => [icon.name, icon]));
 
 const formatPosition = (position: string) => position.replace('-', ' ');

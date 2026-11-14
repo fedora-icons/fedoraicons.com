@@ -17,14 +17,14 @@ const en = {
 
   // Page metadata (titles ≤ 60 characters, descriptions ~150)
   'meta.home.title': 'Fos Icons — Find the right icon, then ship it',
-  'meta.home.description': '{icons} free, {license}-licensed SVG icons in {styles}. Search, recolor, and resize them, then export SVG or PNG, or use them in React and Figma.',
+  'meta.home.description': '{icons}+ free, {license}-licensed SVG icons in {styles}. Search, recolor, and resize them, then export SVG or PNG, or use them in React and Figma.',
   'meta.docs.title': 'Docs — Use Fos Icons in SVG, React, and Figma',
   'meta.docs.description': 'How to use Fos Icons: the four styles, SVG files, the React package, Figma, colors, sizes, {modifiers} modifiers, accessibility, licensing, and privacy.',
   'meta.brands.title': 'Brand icons — Fos Icons',
   'meta.brands.description': '{brands} brand logos, including social networks, Google Chrome, and Microsoft Edge, Teams, and Windows, shown as their owners provide them. Not covered by the {license} license.',
   'meta.notFound.title': 'Page not found — Fos Icons',
   'meta.notFound.description': 'That page does not exist. Browse Fos Icons instead.',
-  'meta.library.description': '{icons} open-source SVG icons on a 24px grid in {styles}, with {modifiers} reusable modifiers.',
+  'meta.library.description': '{icons}+ open-source SVG icons on a 24px grid in {styles}, with {modifiers} reusable modifiers.',
   'meta.shareImageAlt': 'Fos Icons: open-source icons in Regular, Solid, Duocolor, and Duotone, shown on a grid.',
 
   // Header
@@ -67,7 +67,7 @@ const en = {
 
   // Icons page
   'icons.headline': 'Find the <em>right</em> icon, then ship it.',
-  'icons.intro': '{count} open-source icons with soft, rounded line work, drawn in {styles}. Set the size, stroke weight, and colors once, and every icon and download follows.',
+  'icons.intro': '{count}+ open-source icons with soft, rounded line work, drawn in {styles}. Set the size, stroke weight, and colors once, and every icon and download follows.',
   'icons.searchIcons': 'Search icons',
   'icons.searchBrands': 'Search brands',
   'icons.clearSearch': 'Clear search',
@@ -88,8 +88,8 @@ const en = {
   'icons.summaryFor': '{results} for “{query}”',
   'icons.summaryIn': '{results} in {category}',
   'icons.summaryForIn': '{results} for “{query}” in {category}',
-  'icons.tip.search': 'Search {count} icons by name or category',
-  'icons.tip.searchShort': 'Search {count} icons',
+  'icons.tip.search': 'Search {count}+ icons by name or category',
+  'icons.tip.searchShort': 'Search {count}+ icons',
   'icons.tip.multi': 'Tip: Shift-click icons to select several, then download them as a ZIP',
   'icons.tip.slash': 'Tip: press / anywhere to jump to search',
   'icons.tip.arrows': 'Tip: arrow keys move through the grid, Enter opens an icon',
@@ -125,7 +125,7 @@ const en = {
   // 404
   'notFound.badge': 'Page not found',
   'notFound.title': 'This page went <em>off the grid</em>.',
-  'notFound.body': 'The link may be old or mistyped. All {count} icons are still here. Search for one, or pick a place to start.',
+  'notFound.body': 'The link may be old or mistyped. All {count}+ icons are still here. Search for one, or pick a place to start.',
   'notFound.searchLabel': 'Search icons',
   'notFound.searchPlaceholder': 'Search icons, e.g. arrow, calendar',
   'notFound.search': 'Search',

@@ -93,7 +93,7 @@ const list = (items) => new Intl.ListFormat('en', { type: 'conjunction' }).forma
 writeFileSync(join(dist, 'llms.txt'), [
   `# ${SITE_NAME}`,
   '',
-  `> ${SITE_NAME} is a free, open-source icon library: ${nf.format(facts.icons)} SVG icons on a 24px grid in ${list(facts.styles)}, under the ${facts.license} license. ${absolute('/')} lets you search the icons, change their color, size, and stroke, and export SVG or PNG.`,
+  `> ${SITE_NAME} is a free, open-source icon library: ${nf.format(facts.icons)}+ SVG icons on a 24px grid in ${list(facts.styles)}, under the ${facts.license} license. ${absolute('/')} lets you search the icons, change their color, size, and stroke, and export SVG or PNG.`,
   '',
   'Key facts:',
   '',

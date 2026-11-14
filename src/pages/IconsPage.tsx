@@ -9,7 +9,7 @@ import { NoResults } from '../components/NoResults';
 import { SelectionPanel } from '../components/SelectionPanel';
 import { Button, Segmented, UiIcon } from '../components/ui';
 import { availableBrandStyles, brandCategories, brandEntries, hasBrandStyle, loadBrands } from '../lib/brands';
-import { catalog, chunksFor, iconsByName, loadIconChunk, loadStyle, type StyleId } from '../lib/catalog';
+import { catalog, chunksFor, ICONS_ROUNDED, iconsByName, loadIconChunk, loadStyle, type StyleId } from '../lib/catalog';
 import { CONTAINER, usePaneHost } from '../lib/layout';
 import { DEFAULT_LOOK, gridVars, type Look } from '../lib/look';
 import { createIndex, search, suggest } from '../lib/search';
@@ -298,8 +298,7 @@ export function IconsPage() {
   ];
   const tips = brandsView
     ? [t('icons.searchBrands')]
-    : [t(desktop ? 'icons.tip.search' : 'icons.tip.searchShort', { count: catalog.icons.length }), ...(desktop ? DESKTOP_TIPS : MOBILE_TIPS).map((k) => t(k))];
-  const total = catalog.icons.length;
+    : [t(desktop ? 'icons.tip.search' : 'icons.tip.searchShort', { count: ICONS_ROUNDED }), ...(desktop ? DESKTOP_TIPS : MOBILE_TIPS).map((k) => t(k))];
 
   return (
     <div className={`${CONTAINER} pb-16 pt-8 sm:pt-12`}>
@@ -308,7 +307,7 @@ export function IconsPage() {
           {rich('icons.headline', { em: (text) => <span className="text-brand">{text}</span> })}
         </h1>
         <p className="mt-2 text-base text-muted">
-          {t('icons.intro', { count: total, styles: list(catalog.styles.map((s) => t(`style.${s}`))) })}
+          {t('icons.intro', { count: ICONS_ROUNDED, styles: list(catalog.styles.map((s) => t(`style.${s}`))) })}
         </p>
       </div>
 

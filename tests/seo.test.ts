@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import catalog from '../src/data/catalog.json';
+import { ICONS_ROUNDED } from '../src/lib/catalog';
 import { createIndex, suggest } from '../src/lib/search';
 import { headTags, PAGES, pageFor, structuredData } from '../src/lib/seo';
 
@@ -14,7 +15,7 @@ describe('page metadata', () => {
   });
 
   it('derives counts from the catalog and keeps titles and descriptions search-friendly', () => {
-    expect(PAGES.home.description).toContain(new Intl.NumberFormat('en-US').format(catalog.icons.length));
+    expect(PAGES.home.description).toContain(`${new Intl.NumberFormat('en-US').format(ICONS_ROUNDED)}+ free`);
     for (const page of Object.values(PAGES)) {
       expect(page.title.length).toBeLessThanOrEqual(60);
       expect(page.description.length).toBeGreaterThan(50);
