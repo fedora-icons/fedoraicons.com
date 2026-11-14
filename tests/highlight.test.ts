@@ -5,7 +5,7 @@ const text = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<'
 
 describe('highlight', () => {
   it('colors TSX without changing the text', () => {
-    const code = `import { CameraRegular } from '@fedora-icons/react';\n\n<CameraRegular size={24} />`;
+    const code = `import { CameraRegular } from '@fos-icons/react';\n\n<CameraRegular size={24} />`;
     const html = highlight(code, 'tsx')!;
     expect(html).toContain('<span class="hljs-keyword">import</span>');
     expect(text(html)).toBe(code);

@@ -10,25 +10,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: fedoraicons.com
+          path: fosicons.com
       - name: Read pinned library revision
         id: lock
-        run: echo "rev=$(jq -r .revision fedoraicons.com/src/data/source-lock.json)" >> "$GITHUB_OUTPUT"
+        run: echo "rev=$(jq -r .revision fosicons.com/src/data/source-lock.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
-          repository: fedora-icons/fedora-icons
+          repository: fos-icons/fos-icons
           ref: ${{ steps.lock.outputs.rev }}
-          path: fedora-icons
+          path: fos-icons
       # pnpm's version comes from "packageManager" in package.json.
       - uses: pnpm/action-setup@v6
         with:
-          package_json_file: fedoraicons.com/package.json
+          package_json_file: fosicons.com/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version-file: fedoraicons.com/.nvmrc
+          node-version-file: fosicons.com/.nvmrc
           cache: pnpm
-          cache-dependency-path: fedoraicons.com/pnpm-lock.yaml
+          cache-dependency-path: fosicons.com/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-        working-directory: fedoraicons.com
+        working-directory: fosicons.com
       - run: pnpm run check
-        working-directory: fedoraicons.com
+        working-directory: fosicons.com

@@ -5,7 +5,7 @@
  *   node scripts/brand-images.mjs
  *
  * Uses real library artwork (from the synced public/icons/*.json) and the
- * Fedora Icons mark, laid out in HTML and captured with headless Chrome
+ * Fos Icons mark, laid out in HTML and captured with headless Chrome
  * (set CHROME to its path if it isn't in the default macOS location).
  * Re-run after changing the mark or the showcase icons; the PNGs are
  * committed so builds don't need a browser.
@@ -42,7 +42,7 @@ svg { display: block; width: 100%; height: 100%; }
 </style></head><body>${body}</body></html>`;
 
 function shoot(html, width, height, out) {
-  const dir = mkdtempSync(join(tmpdir(), 'fedora-brand-'));
+  const dir = mkdtempSync(join(tmpdir(), 'fos-brand-'));
   const file = join(dir, 'page.html');
   writeFileSync(file, html);
   execFileSync(CHROME, [
@@ -67,7 +67,7 @@ shoot(page(1200, 630, `
     <div style="flex:1;display:flex;flex-direction:column">
       <div style="display:flex;align-items:center;gap:14px">
         <div style="width:48px;height:48px;color:${INK}">${markRegular}</div>
-        <div style="font-family:'Funnel Display';font-size:34px;font-weight:600;letter-spacing:-0.02em">Fedora Icons</div>
+        <div style="font-family:'Funnel Display';font-size:34px;font-weight:600;letter-spacing:-0.02em">Fos Icons</div>
       </div>
       <div style="margin-top:auto;font-family:'Funnel Display';font-size:66px;line-height:1.02;font-weight:600;letter-spacing:-0.035em">Find the <span style="color:${BRAND}">right</span> icon, then ship it.</div>
       <div style="margin-top:22px;font-size:24px;line-height:1.35;color:#5C5C5C;max-width:470px">Open-source SVG icons in four styles. Recolor, resize, and export in seconds.</div>

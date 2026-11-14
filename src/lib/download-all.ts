@@ -2,8 +2,8 @@ import { LocalizedError } from '../i18n/errors';
 import { catalog, loadStyle, lock, STYLE_META } from './catalog';
 import { buildZip, type ZipEntry } from './zip';
 
-/** File name of the full free set, e.g. `fedora-icons-2afb7bb.zip`. */
-export const fullSetName = () => `fedora-icons-${lock.revision ? lock.revision.slice(0, 7) : 'snapshot'}.zip`;
+/** File name of the full free set, e.g. `fos-icons-2afb7bb.zip`. */
+export const fullSetName = () => `fos-icons-${lock.revision ? lock.revision.slice(0, 7) : 'snapshot'}.zip`;
 
 /**
  * Every core icon in every style, exactly as the library ships them (the
@@ -13,7 +13,7 @@ export const fullSetName = () => `fedora-icons-${lock.revision ? lock.revision.s
 export async function buildFullSet(): Promise<Blob> {
   const [maps, license] = await Promise.all([
     Promise.all(catalog.styles.map(loadStyle)),
-    fetch(`${import.meta.env.BASE_URL}licenses/fedora-icons-LICENSE.txt`).then((res) => {
+    fetch(`${import.meta.env.BASE_URL}licenses/fos-icons-LICENSE.txt`).then((res) => {
       if (!res.ok) throw new LocalizedError('error.loadLicense', { status: String(res.status) });
       return res.text();
     }),
@@ -29,7 +29,7 @@ export async function buildFullSet(): Promise<Blob> {
   entries.push({
     name: 'README.txt',
     data: [
-      'Fedora Icons',
+      'Fos Icons',
       '',
       `${catalog.icons.length} core icons in ${catalog.styles.map((s) => STYLE_META[s].label).join(', ')}.`,
       `Source: https://github.com/${lock.repository}${lock.revision ? ` at ${lock.revision}` : ''}`,

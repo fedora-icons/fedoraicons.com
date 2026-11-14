@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 /** Side pane width in px: default, limits, and keyboard step. */
 export const PANE_WIDTH = { default: 380, min: 320, max: 640, step: 16 } as const;
-const KEY = 'fedora-pane-width';
+const KEY = 'fos-pane-width';
 
 const clamp = (value: number) => Math.round(Math.min(PANE_WIDTH.max, Math.max(PANE_WIDTH.min, value)));
 

@@ -24,8 +24,8 @@ describe('page metadata', () => {
 
   it('writes canonical, Open Graph, Twitter, and JSON-LD tags', () => {
     const tags = headTags(PAGES.docs);
-    expect(tags).toContain('<link rel="canonical" href="https://www.fedoraicons.com/docs" />');
-    expect(tags).toContain('<meta property="og:image" content="https://www.fedoraicons.com/og-image.png" />');
+    expect(tags).toContain('<link rel="canonical" href="https://www.fosicons.com/docs" />');
+    expect(tags).toContain('<meta property="og:image" content="https://www.fosicons.com/og-image.png" />');
     expect(tags).toContain('<meta name="twitter:card" content="summary_large_image" />');
     const json = JSON.parse(tags.match(/<script type="application\/ld\+json">(.*)<\/script>/)![1]);
     expect(json['@graph'].map((n: { '@type': string }) => n['@type'])).toEqual(['WebSite', 'Organization', 'TechArticle', 'BreadcrumbList']);

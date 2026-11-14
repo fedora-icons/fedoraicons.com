@@ -2,7 +2,7 @@ import { useI18n } from '../i18n';
 import type { IconEntry } from '../lib/catalog';
 import { Button, UiIcon } from './ui';
 
-const REQUEST_URL = 'https://github.com/fedora-icons/fedora-icons/issues/new';
+const REQUEST_URL = 'https://github.com/fos-icons/fos-icons/issues/new';
 
 /**
  * Shown when a search finds nothing: says what was searched, offers close

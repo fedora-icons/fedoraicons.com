@@ -3,7 +3,7 @@ import uiIcons from '../data/ui-icons.json';
 
 export type UiIconName = keyof typeof uiIcons;
 
-/** Interface glyphs are Fedora's own Regular icons from the synced library. */
+/** Interface glyphs are the library's own Regular icons from the synced library. */
 export function UiIcon({ name, className = 'size-5' }: { name: UiIconName; className?: string }) {
   return <span aria-hidden="true" className={`glyph inline-block shrink-0 ${className}`} dangerouslySetInnerHTML={{ __html: uiIcons[name] }} />;
 }

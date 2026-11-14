@@ -4,10 +4,10 @@ import { isDuo } from './svg';
 
 /**
  * Free-form modifier previews. This mirrors the library's own composer
- * (fedora-icons `scripts/compose_svg.py`, as used for its authored presets):
+ * (fos-icons `scripts/compose_svg.py`, as used for its authored presets):
  * the base is clipped by the modifier's transparent clearance, the glyph is
  * cut out of the badge as a transparent stencil, and the badge follows the
- * icon color in Regular/Solid and the `--fedora-modifier` role in the duo
+ * icon color in Regular/Solid and the `--fos-modifier` role in the duo
  * styles. Unlike authored presets, the base is never refitted.
  */
 
@@ -25,7 +25,7 @@ export interface ModifierAsset {
   label: string;
   group: string;
   defaultPosition: Corner | null;
-  /** Library default for the duo `--fedora-modifier` role (light theme). */
+  /** Library default for the duo `--fos-modifier` role (light theme). */
   color: string;
   positions: Partial<Record<Corner, Placement>>;
   svg: string;
@@ -82,7 +82,7 @@ export function loadModifiers(): Promise<ModifierAsset[]> {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 /** The library's paint for the glyph drawn on a badge. */
-const GLYPH_PAINT = 'var(--fedora-glyph-color, #FFFFFF)';
+const GLYPH_PAINT = 'var(--fos-glyph-color, #FFFFFF)';
 
 function parse(svg: string): Element {
   const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
@@ -203,7 +203,7 @@ export function composeSvg(base: string, modifier: ModifierAsset, corner: Corner
   cutoutStencil(badge, prefix);
   badge.setAttribute('x', String(placement.x));
   badge.setAttribute('y', String(placement.y));
-  badge.setAttribute('color', duo ? `var(--fedora-modifier, ${modifier.color})` : 'currentColor');
+  badge.setAttribute('color', duo ? `var(--fos-modifier, ${modifier.color})` : 'currentColor');
 
   result.append(defs, masked, badge);
   return new XMLSerializer().serializeToString(result);

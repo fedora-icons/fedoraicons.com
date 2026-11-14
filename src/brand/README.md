@@ -1,8 +1,8 @@
-# Fedora Icons mark
+# Fos Icons mark
 
-`mark-regular.svg` and `mark-filled.svg` are the first-party Fedora Icons mark,
-exported unmodified (except `#212121` paint -> `currentColor`) from the Fedora
-Icons Figma file `5zcUV9E4Bu8FSssDfhyOWw`, component set `fedora-icons`
+`mark-regular.svg` and `mark-filled.svg` are the first-party Fos Icons mark,
+exported unmodified (except `#212121` paint -> `currentColor`) from the Fos
+Icons Figma file `5zcUV9E4Bu8FSssDfhyOWw`, component set `fos-icons`
 (`71:151203`; Regular `71:151173`, Filled `71:151178`) on 2026-11-11.
 
 The mark is the website's identity. It is not part of the four-style SVG core,

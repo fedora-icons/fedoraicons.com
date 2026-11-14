@@ -47,8 +47,8 @@
   --c-danger: #b42318;
   --c-success: #15803d;
   /* Live duo roles for the grid and previews. */
-  --fedora-primary: #245b9e;
-  --fedora-secondary: #5b87b7;
+  --fos-primary: #245b9e;
+  --fos-secondary: #5b87b7;
 }
 
 .dark {
@@ -67,8 +67,8 @@
   --c-focus: #93c5fd;
   --c-danger: #fca5a5;
   --c-success: #86efac;
-  --fedora-primary: #93c5fd;
-  --fedora-secondary: #60a5fa;
+  --fos-primary: #93c5fd;
+  --fos-secondary: #60a5fa;
 }
 
 @layer base {

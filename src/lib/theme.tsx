@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
-const KEY = 'fedora-theme';
+const KEY = 'fos-theme';
 
 function readPreference(): ThemePreference {
   try {

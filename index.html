@@ -4,17 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- page-meta:start (replaced per page by scripts/postbuild.mjs) -->
-    <title>Fedora Icons — Find the right icon, then ship it</title>
+    <title>Fos Icons — Find the right icon, then ship it</title>
     <meta name="description" content="Open-source SVG icons in Regular, Solid, Duocolor, and Duotone. Search, recolor, and resize them, then export SVG or PNG, or use them in React and Figma." />
     <!-- page-meta:end -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="apple-mobile-web-app-title" content="Fedora Icons" />
+    <meta name="apple-mobile-web-app-title" content="Fos Icons" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="author" content="Fedora Icons" />
-    <meta name="application-name" content="Fedora Icons" />
+    <meta name="author" content="Fos Icons" />
+    <meta name="application-name" content="Fos Icons" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
@@ -22,7 +22,7 @@
       // Apply the saved or system theme before first paint.
       (function () {
         var pref = 'system';
-        try { pref = localStorage.getItem('fedora-theme') || 'system'; } catch (e) {}
+        try { pref = localStorage.getItem('fos-theme') || 'system'; } catch (e) {}
         var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', dark);
       })();
@@ -30,7 +30,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <noscript>Fedora Icons needs JavaScript to search and export icons.</noscript>
+    <noscript>Fos Icons needs JavaScript to search and export icons.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

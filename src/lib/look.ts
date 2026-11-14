@@ -92,8 +92,8 @@ export function gridVars(look: Look, style: StyleId, theme: 'light' | 'dark', ki
     '--stroke-scale': String(strokeAdjustable(style, kind) ? Math.round((strokeOf(look) / BASE_STROKE) * 10000) / 10000 : 1),
   };
   if (isDuo(style)) {
-    vars['--fedora-primary'] = r.duo.primary;
-    vars['--fedora-secondary'] = r.duo.secondary;
+    vars['--fos-primary'] = r.duo.primary;
+    vars['--fos-secondary'] = r.duo.secondary;
   } else if (look.mono) {
     vars.color = look.mono;
   }
@@ -114,7 +114,7 @@ export function exportColors(
 ): SvgColorOptions {
   const r = resolveLook(look, theme);
   const duo = isDuo(style);
-  const modifierDefault = source.match(/var\(--fedora-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase();
+  const modifierDefault = source.match(/var\(--fos-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase();
   return {
     primary: duo ? r.duo.primary : r.mono,
     secondary: duo && hasSecondaryRole(source) ? r.duo.secondary : undefined,

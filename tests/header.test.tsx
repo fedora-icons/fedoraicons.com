@@ -10,9 +10,9 @@ import { catalog, lock, resetStyleCache } from '../src/lib/catalog';
 import { ThemeProvider } from '../src/lib/theme';
 import { styleSvgs } from './helpers';
 
-const license = readFileSync(join(__dirname, '../public/licenses/fedora-icons-LICENSE.txt'), 'utf8');
+const license = readFileSync(join(__dirname, '../public/licenses/fos-icons-LICENSE.txt'), 'utf8');
 const fetchMock = vi.fn(async (url: string) => {
-  if (url.endsWith('fedora-icons-LICENSE.txt')) return new Response(license, { status: 200 });
+  if (url.endsWith('fos-icons-LICENSE.txt')) return new Response(license, { status: 200 });
   const style = /icons\/(\w+)\.json/.exec(url)![1] as 'regular';
   return new Response(JSON.stringify(styleSvgs(style)), { status: 200 });
 });
@@ -42,7 +42,7 @@ describe('Header actions', () => {
     renderAt('/');
     const nav = screen.getByRole('navigation', { name: 'Main' });
     const start = within(nav).getByRole('link', { name: /Get started/ });
-    expect(start.getAttribute('href')).toBe('https://github.com/fedora-icons/fedora-icons');
+    expect(start.getAttribute('href')).toBe('https://github.com/fos-icons/fos-icons');
     expect(start.getAttribute('target')).toBe('_blank');
     const figma = within(nav).getByRole('link', { name: /^Figma/ });
     expect(figma.getAttribute('href')).toMatch(/^https:\/\/www\.figma\.com\/design\/5zcUV9E4Bu8FSssDfhyOWw\//);
@@ -68,8 +68,8 @@ describe('Header actions', () => {
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { filename = this.download; });
     renderAt('/');
     await user.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Download' }));
-    await screen.findByText(/^Downloaded fedora-icons-/);
-    expect(filename).toBe(`fedora-icons-${lock.revision!.slice(0, 7)}.zip`);
+    await screen.findByText(/^Downloaded fos-icons-/);
+    expect(filename).toBe(`fos-icons-${lock.revision!.slice(0, 7)}.zip`);
 
     const { unzipSync, strFromU8 } = await import('fflate');
     const bytes = await new Promise<ArrayBuffer>((resolve) => {

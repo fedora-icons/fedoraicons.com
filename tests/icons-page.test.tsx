@@ -105,7 +105,7 @@ describe('Icons page', () => {
     const empty = within(screen.getByRole('region', { name: 'No icons for “zzzznothing”' }));
     expect(empty.getByRole('button', { name: 'Clear search' })).toBeTruthy();
     const request = empty.getByRole('link', { name: /Request this icon/ });
-    expect(request.getAttribute('href')).toBe('https://github.com/fedora-icons/fedora-icons/issues/new?title=Icon+request%3A+zzzznothing');
+    expect(request.getAttribute('href')).toBe('https://github.com/fos-icons/fos-icons/issues/new?title=Icon+request%3A+zzzznothing');
   });
 
   it('suggests close matches for a typo and searches them in one click', async () => {
@@ -233,7 +233,7 @@ describe('Icons page', () => {
     expect(within(footer).getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe('/docs#privacy');
     expect(within(footer).getByRole('link', { name: 'License' }).getAttribute('href')).toBe('/docs#licensing');
     const npm = within(footer).getByRole('link', { name: /^npm/ });
-    expect(npm.getAttribute('href')).toBe('https://www.npmjs.com/org/fedora-icons');
+    expect(npm.getAttribute('href')).toBe('https://www.npmjs.com/org/fos-icons');
     expect(npm.getAttribute('target')).toBe('_blank');
     expect(footer.textContent).not.toMatch(/Library [0-9a-f]{7}|licensed separately|MIT licensed/);
   });
@@ -313,12 +313,12 @@ describe('Side pane (desktop)', () => {
     await user.keyboard('{ArrowLeft}{ArrowLeft}');
     expect(handle.getAttribute('aria-valuenow')).toBe('412');
     expect(pane.style.width).toBe('412px');
-    expect(localStorage.getItem('fedora-pane-width')).toBe('412');
+    expect(localStorage.getItem('fos-pane-width')).toBe('412');
     await user.keyboard('{End}');
     expect(handle.getAttribute('aria-valuenow')).toBe('640');
     await user.keyboard('{Enter}');
     expect(handle.getAttribute('aria-valuenow')).toBe('380');
-    expect(localStorage.getItem('fedora-pane-width')).toBeNull();
+    expect(localStorage.getItem('fos-pane-width')).toBeNull();
   });
 
   it('has no stroke control for Solid', async () => {
@@ -333,14 +333,14 @@ describe('Side pane (desktop)', () => {
     renderAt('/');
     const pane = await screen.findByRole('complementary', { name: 'Icon panel' });
     const feedback = within(pane).getByRole('link', { name: /Feedback/ });
-    expect(feedback.getAttribute('href')).toBe('https://github.com/fedora-icons/fedoraicons.com/issues/new');
+    expect(feedback.getAttribute('href')).toBe('https://github.com/fos-icons/fosicons.com/issues/new');
     await user.click(within(pane).getByRole('button', { name: 'Collapse panel' }));
     expect(within(pane).queryByRole('link', { name: /Feedback/ })).toBeNull();
     // The theme toggle sits beside the collapse button, and stays on the rail.
     expect(within(pane).getByRole('button', { name: /^Theme:/ })).toBeTruthy();
     expect(within(pane).getByRole('button', { name: 'Expand panel' }).getAttribute('aria-expanded')).toBe('false');
     expect(document.getElementById('side-pane-body')!.hidden).toBe(true);
-    expect(localStorage.getItem('fedora-pane-collapsed')).toBe('1');
+    expect(localStorage.getItem('fos-pane-collapsed')).toBe('1');
 
     await user.click((await screen.findAllByRole('button', { name: 'search' }))[0]);
     expect(document.getElementById('side-pane-body')!.hidden).toBe(false);
@@ -422,7 +422,7 @@ describe('Multi-select and ZIP export (desktop)', () => {
     fireEvent.change(within(pane).getByRole('slider', { name: 'Size' }), { target: { value: '32' } });
     await user.click(within(pane).getByRole('button', { name: 'Download 2 icons (.zip)' }));
     // Building the ZIP is slow on CI runners; allow more than the 1s default.
-    await screen.findByText(/Downloaded 2 icons as fedora-icons-regular-2-svg\.zip/, undefined, { timeout: 8000 });
+    await screen.findByText(/Downloaded 2 icons as fos-icons-regular-2-svg\.zip/, undefined, { timeout: 8000 });
 
     const { unzipSync, strFromU8 } = await import('fflate');
     const bytes = await new Promise<ArrayBuffer>((resolve) => {
@@ -474,7 +474,7 @@ describe('Inspector sections (desktop)', () => {
     await user.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     const code = pane.querySelector('.code-block code')!;
-    expect(code.textContent).toMatch(/^import \{ SearchRegular \} from '@fedora-icons\/react';/);
+    expect(code.textContent).toMatch(/^import \{ SearchRegular \} from '@fos-icons\/react';/);
     // Syntax colors arrive once the highlighter loads.
     await vi.waitFor(() => expect(pane.querySelector('.code-block .hljs-keyword')?.textContent).toBe('import'));
   });
@@ -486,7 +486,7 @@ describe('Inspector sections (desktop)', () => {
     const variant = within(pane).getByRole('radiogroup', { name: 'Palette variant' });
     await user.click(within(variant).getByRole('radio', { name: 'Dark' }));
     expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(localStorage.getItem('fedora-theme')).toBe('dark');
+    expect(localStorage.getItem('fos-theme')).toBe('dark');
     await user.click(within(variant).getByRole('radio', { name: 'Light' }));
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });

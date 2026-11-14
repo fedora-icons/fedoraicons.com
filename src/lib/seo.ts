@@ -10,12 +10,12 @@ import { FIGMA_URL, LIBRARY_URL } from './links';
  * Counts come from the synced catalog; nothing here is hard-coded.
  */
 
-/** The production origin. Vercel redirects fedoraicons.com here, so canonical links must use www. */
-export const SITE_URL = 'https://www.fedoraicons.com';
-export const SITE_NAME = 'Fedora Icons';
-export const GITHUB_ORG_URL = 'https://github.com/fedora-icons';
-export const NPM_REACT_URL = 'https://www.npmjs.com/package/@fedora-icons/react';
-export const NPM_VUE_URL = 'https://www.npmjs.com/package/@fedora-icons/vue';
+/** The production origin. Vercel redirects fosicons.com here, so canonical links must use www. */
+export const SITE_URL = 'https://www.fosicons.com';
+export const SITE_NAME = 'Fos Icons';
+export const GITHUB_ORG_URL = 'https://github.com/fos-icons';
+export const NPM_REACT_URL = 'https://www.npmjs.com/package/@fos-icons/react';
+export const NPM_VUE_URL = 'https://www.npmjs.com/package/@fos-icons/vue';
 
 export const SHARE_IMAGE = { path: '/og-image.png', width: 1200, height: 630 };
 

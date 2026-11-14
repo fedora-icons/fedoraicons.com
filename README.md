@@ -1,13 +1,13 @@
-# fedoraicons.com
+# fosicons.com
 
-The Fedora Icons website: search the library, customize an icon, and export it.
-Production domain: **fedoraicons.com**.
+The Fos Icons website: search the library, customize an icon, and export it.
+Production domain: **fosicons.com**.
 
 | Repository | Owns |
 | --- | --- |
-| `fedora-icons/fedoraicons.com` (this repo) | Website code, synchronized data snapshot |
-| [`fedora-icons/fedora-icons`](https://github.com/fedora-icons/fedora-icons) | Canonical SVG artwork, manifest, metadata |
-| [`fedora-icons/react-fedora`](https://github.com/fedora-icons/react-fedora) | `@fedora-icons/react` package |
+| `fos-icons/fosicons.com` (this repo) | Website code, synchronized data snapshot |
+| [`fos-icons/fos-icons`](https://github.com/fos-icons/fos-icons) | Canonical SVG artwork, manifest, metadata |
+| [`fos-icons/react-fos`](https://github.com/fos-icons/react-fos) | `@fos-icons/react` package |
 
 This repo never edits artwork. It consumes a verified, revision-pinned snapshot
 of the library (see [docs/ASSETS.md](docs/ASSETS.md)).
@@ -16,7 +16,7 @@ of the library (see [docs/ASSETS.md](docs/ASSETS.md)).
 
 React 19, TypeScript, Vite 6, Tailwind CSS 4, React Router 7. Fonts are
 self-hosted through Fontsource: **Funnel Display** (titles) and **Asta Sans**
-(body). Interface glyphs are Fedora's own Regular icons, taken from the
+(body). Interface glyphs are the library's own Regular icons, taken from the
 synchronized library. The site builds to static files.
 
 ## Development
@@ -31,7 +31,7 @@ pnpm run dev          # http://localhost:5173
 
 | Script | Purpose |
 | --- | --- |
-| `pnpm run sync --source ../fedora-icons` | Re-synchronize data from a library checkout |
+| `pnpm run sync --source ../fos-icons` | Re-synchronize data from a library checkout |
 | `pnpm run sync:check` | Fail if committed data differs from the library checkout |
 | `pnpm run typecheck` | TypeScript project build (no emit) |
 | `pnpm run lint` | ESLint |
@@ -39,8 +39,8 @@ pnpm run dev          # http://localhost:5173
 | `pnpm run build` | Type check, production build to `dist/`, route entry points |
 | `pnpm run check` | All of the above, in order |
 
-`sync:check` and `pnpm run check` look for the library at `../fedora-icons`
-by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
+`sync:check` and `pnpm run check` look for the library at `../fos-icons`
+by default. Override with `--source <path>` or `FOS_ICONS_SOURCE`.
 
 ## What the site does
 
@@ -62,7 +62,7 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   between in 0.05px steps (so 48px is 1px) and held at 0.85px above 64px. Moving the slider (0.5–2.5px) fixes a
   value until "Use auto". Every authored stroke is scaled by the same factor,
   so intentionally heavier strokes keep their proportions.
-  Solid and brand artwork have no stroke control. `@fedora-icons/react` cannot
+  Solid and brand artwork have no stroke control. `@fos-icons/react` cannot
   change stroke weight, and the React panel says so.
 - **Icon sets**: Shift-click (or ⌘/Ctrl-click, or Shift+Enter) adds or removes
   icons from a set. The pane then applies one size, stroke, and color to the
@@ -85,13 +85,13 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   `metadata/modifiers.json`, loaded on demand). File-type labels are offered
   only on file and folder icons, image-quality marks only on images. Previews
   are composed exactly as the library's `scripts/compose_svg.py` composes its
-  presets (transparent clearance, cutout glyph, `--fedora-modifier` in duo
+  presets (transparent clearance, cutout glyph, `--fos-modifier` in duo
   styles), but the base is not refitted, so the badge may cover detail. They
   are labeled as previews, and downloads and copies include them. When a
   designed library version exists, the pane links to it.
 - **Side pane width**: drag the pane's left edge (or focus it and use the
   arrow keys, Home/End; Enter or double-click resets). The width is kept on
-  this device as `fedora-pane-width`.
+  this device as `fos-pane-width`.
 - **Side pane sections** collapse and expand; the choice holds while you
   switch icons.
 - **Brands**: the last option in the style switcher (`/?style=brands`; the old
@@ -136,7 +136,7 @@ by default. Override with `--source <path>` or `FEDORA_ICONS_SOURCE`.
   `public/app/` are rendered from real library artwork and the mark by
   `node scripts/brand-images.mjs` (needs Chrome). Re-run it when the mark or
   showcase icons change.
-- `SITE_URL` in `src/lib/seo.ts` is `https://www.fedoraicons.com`. Canonical
+- `SITE_URL` in `src/lib/seo.ts` is `https://www.fosicons.com`. Canonical
   links have no trailing slash (`/docs`), so the host should serve
   `docs/index.html` at `/docs` without redirecting.
 
@@ -192,7 +192,7 @@ public/icons/<style>.json whole-style SVG maps for downloads (generated)
 public/icons/<style>/     96-icon chunks the grid loads lazily (generated)
 public/sw.js              service worker (offline, repeat-visit speed)
 src/data/*.json           catalog, palettes, UI glyphs, source lock (generated), brands (generated)
-src/brand/                Fedora Icons mark (from Figma; see its README)
+src/brand/                Fos Icons mark (from Figma; see its README)
 src/lib/                  svg export, search, URL state, look (customization), brands, React snippet, theme
 src/components/           layout, grid, side pane + inspector, customize controls, UI primitives
 src/pages/                Icons (core styles and Brands), Docs, 404
@@ -203,4 +203,4 @@ tests/                    Vitest suites
 
 ## Deployment
 
-Live at https://www.fedoraicons.com on Vercel; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Live at https://www.fosicons.com on Vercel; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

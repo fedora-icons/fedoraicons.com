@@ -24,8 +24,8 @@ describe('Docs page', () => {
     expect(blocks.length).toBeGreaterThan(0);
     const shell = document.querySelector('.code-block[data-lang="sh"]')?.textContent;
     expect(shell).toMatch(/^Terminal/);
-    expect(shell).toContain('npm install @fedora-icons/react');
-    expect(shell).toContain('pnpm add @fedora-icons/react');
+    expect(shell).toContain('npm install @fos-icons/react');
+    expect(shell).toContain('pnpm add @fos-icons/react');
   });
 
   it('documents what the site stores in a Privacy section', () => {
@@ -34,8 +34,8 @@ describe('Docs page', () => {
     expect(within(nav).getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe('#privacy');
     const section = document.getElementById('privacy')!;
     expect(section.textContent).toMatch(/no cookies/);
-    expect(section.textContent).toContain('fedora-theme');
-    expect(section.textContent).toContain('fedora-pane-collapsed');
-    expect(section.textContent).toContain('fedora-pane-width');
+    expect(section.textContent).toContain('fos-theme');
+    expect(section.textContent).toContain('fos-pane-collapsed');
+    expect(section.textContent).toContain('fos-pane-width');
   });
 });
