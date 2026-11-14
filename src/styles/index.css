@@ -286,3 +286,9 @@ html:has(.docs-page) {
     scroll-behavior: auto !important;
   }
 }
+
+/* Docs search matches (CSS Custom Highlight API; see DocsPage). */
+::highlight(docs-search) {
+  background-color: rgb(250 204 21 / 0.45);
+  color: inherit;
+}

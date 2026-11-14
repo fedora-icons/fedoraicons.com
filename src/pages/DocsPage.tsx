@@ -7,6 +7,7 @@ import { copyText } from '../lib/export';
 import { CodeBlock } from '../components/CodeBlock';
 import { useToast } from '../components/ui';
 import { CONTAINER } from '../lib/layout';
+import { useSlashToFocus } from './IconsPage';
 
 const nf = new Intl.NumberFormat('en-US');
 const compositions = catalog.icons.filter((i) => i.composition);
@@ -63,22 +64,24 @@ const SPY_OFFSET = 120;
  * the last section once the page bottom is reached. A clicked link wins until
  * its scroll settles, so short final sections can still be selected.
  */
-function useActiveSection() {
+function useActiveSection(ids: readonly string[]) {
   const [active, setActive] = useState<string>(SECTIONS[0][0]);
   const pinned = useRef<{ id: string; timer: number } | null>(null);
+  const key = ids.join(' ');
 
   useEffect(() => {
+    const shown = key ? key.split(' ') : [];
     let frame = 0;
     const measure = () => {
       frame = 0;
-      if (pinned.current) return;
+      if (pinned.current || !shown.length) return;
       const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-      let current: string = SECTIONS[0][0];
-      for (const [id] of SECTIONS) {
+      let current = shown[0];
+      for (const id of shown) {
         const el = document.getElementById(id);
         if (el && el.getBoundingClientRect().top <= SPY_OFFSET) current = id;
       }
-      setActive(atBottom ? SECTIONS[SECTIONS.length - 1][0] : current);
+      setActive(atBottom ? shown[shown.length - 1] : current);
     };
     const onScroll = () => {
       if (pinned.current) {
@@ -96,7 +99,7 @@ function useActiveSection() {
       window.removeEventListener('resize', onScroll);
       cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [key]);
 
   const choose = (id: string) => {
     if (pinned.current) window.clearTimeout(pinned.current.timer);
@@ -105,6 +108,102 @@ function useActiveSection() {
     setActive(id);
   };
   return [active, choose] as const;
+}
+
+const ALL_IDS = SECTIONS.map(([id]) => id);
+const HIGHLIGHT = 'docs-search';
+
+/** Lowercased words of a query; a section matches when it contains all of them. */
+const queryWords = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
+
+/** Text nodes a reader sees as content: skips button labels (Copy) and aria-hidden chrome. */
+function contentTextNodes(root: Element): Text[] {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => (node.parentElement?.closest('button, [aria-hidden="true"]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  const nodes: Text[] = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+  return nodes;
+}
+
+/**
+ * Filters the docs sections by a query: hides sections that don't contain
+ * every word and highlights the matches where the browser supports
+ * CSS.highlights. Returns the ids still shown, in page order.
+ */
+function useSectionFilter(query: string) {
+  const [shown, setShown] = useState<readonly string[]>(ALL_IDS);
+  const words = queryWords(query).join(' ');
+
+  useEffect(() => {
+    const terms = words ? words.split(' ') : [];
+    const ranges: Range[] = [];
+    const matched: string[] = [];
+    for (const id of ALL_IDS) {
+      const section = document.getElementById(id);
+      if (!section) continue;
+      const nodes = contentTextNodes(section);
+      const text = nodes.map((n) => n.data).join('').toLowerCase();
+      const match = terms.every((w) => text.includes(w));
+      section.hidden = !match;
+      if (!match) continue;
+      matched.push(id);
+      for (const node of nodes) {
+        const lower = node.data.toLowerCase();
+        for (const w of terms) {
+          for (let i = lower.indexOf(w); i !== -1; i = lower.indexOf(w, i + w.length)) {
+            const range = document.createRange();
+            range.setStart(node, i);
+            range.setEnd(node, i + w.length);
+            ranges.push(range);
+          }
+        }
+      }
+    }
+    setShown(matched);
+    const highlights = typeof CSS !== 'undefined' ? CSS.highlights : undefined;
+    if (highlights && typeof Highlight !== 'undefined') {
+      if (ranges.length) highlights.set(HIGHLIGHT, new Highlight(...ranges));
+      else highlights.delete(HIGHLIGHT);
+    }
+  }, [words]);
+
+  useEffect(() => () => {
+    if (typeof CSS !== 'undefined') CSS.highlights?.delete(HIGHLIGHT);
+  }, []);
+
+  return shown;
+}
+
+function DocsSearch({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  useSlashToFocus(ref);
+  return (
+    <div className="relative">
+      <UiIcon name="search" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
+      <input
+        ref={ref}
+        type="search"
+        aria-label="Search the docs"
+        placeholder="Search docs"
+        value={value}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Escape' && value) { e.preventDefault(); onChange(''); } }}
+        className="h-9 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-9 text-sm text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-4 focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden"
+      />
+      <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        {value ? (
+          <button type="button" aria-label="Clear search" onClick={() => { onChange(''); ref.current?.focus(); }} className="inline-flex size-6 items-center justify-center rounded-md text-muted hover:bg-sunken hover:text-ink">
+            <UiIcon name="x" className="size-4" />
+          </button>
+        ) : (
+          <kbd aria-hidden="true" className="hidden rounded border border-line bg-sunken px-1.5 text-xs text-muted md:inline">/</kbd>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function DocsPage() {
@@ -116,32 +215,42 @@ export default function DocsPage() {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView(arrived.current ? undefined : { behavior: 'instant' });
     arrived.current = true;
   }, [hash]);
-  const [active, setActive] = useActiveSection();
+  const [query, setQuery] = useState('');
+  const shown = useSectionFilter(query);
+  const [active, setActive] = useActiveSection(shown);
+  const searching = queryWords(query).length > 0;
   // Other languages show this English page until a translation exists (see src/i18n/content.ts).
   const { t, config, path } = useI18n();
   const english = config.code !== DEFAULT_LOCALE;
 
   return (
-    <div className={`docs-page ${CONTAINER} flex gap-12 pb-20 pt-8 sm:pt-12`}>
-      <nav aria-label="Documentation" className="sticky top-8 hidden h-fit w-44 shrink-0 md:block">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">On this page</p>
-        <ul className="border-l border-line text-sm">
-          {SECTIONS.map(([id, label]) => (
-            <li key={id}>
-              <a
-                href={`#${id}`}
-                aria-current={active === id ? 'location' : undefined}
-                onClick={() => setActive(id)}
-                className={`-ml-px block border-l-2 py-1.5 pl-3 pr-2 transition-colors ${
-                  active === id ? 'border-brand font-medium text-ink' : 'border-transparent text-muted hover:border-line-strong hover:text-ink'
-                }`}
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <div className={`docs-page ${CONTAINER} flex flex-col gap-6 pb-20 pt-8 sm:pt-12 md:flex-row md:gap-12`}>
+      <aside className="h-fit shrink-0 md:sticky md:top-8 md:w-44">
+        <DocsSearch value={query} onChange={setQuery} />
+        <p role="status" className="sr-only">
+          {searching ? `${shown.length} ${shown.length === 1 ? 'section matches' : 'sections match'}` : ''}
+        </p>
+        <nav aria-label="Documentation" className="mt-6 hidden md:block">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">On this page</p>
+          {shown.length === 0 && <p className="text-sm text-muted">No matches</p>}
+          <ul className="border-l border-line text-sm empty:hidden">
+            {SECTIONS.filter(([id]) => shown.includes(id)).map(([id, label]) => (
+              <li key={id}>
+                <a
+                  href={`#${id}`}
+                  aria-current={active === id ? 'location' : undefined}
+                  onClick={() => setActive(id)}
+                  className={`-ml-px block border-l-2 py-1.5 pl-3 pr-2 transition-colors ${
+                    active === id ? 'border-brand font-medium text-ink' : 'border-transparent text-muted hover:border-line-strong hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
 
       <article lang={english ? 'en' : undefined} className="min-w-0 max-w-[720px] flex-1 space-y-10">
         {english && (
@@ -156,6 +265,16 @@ export default function DocsPage() {
             each in {catalog.styles.length} styles, on a {catalog.grid}px grid.
           </p>
         </header>
+
+        {shown.length === 0 && (
+          <div className="rounded-xl border border-line p-6 text-center">
+            <p className="font-medium text-ink">Nothing in the docs matches “{query.trim()}”</p>
+            <p className="mt-1 text-sm text-muted">Try a shorter or different word.</p>
+            <button type="button" onClick={() => setQuery('')} className="mt-4 rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium text-ink hover:bg-sunken">
+              Clear search
+            </button>
+          </div>
+        )}
 
         <Section id="styles" title="Styles">
           <ul className="list-disc space-y-1 pl-5">
