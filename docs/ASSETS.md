@@ -1,13 +1,13 @@
 # Asset synchronization
 
-The website consumes `fedora-icons/fedora-icons` as read-only input.
+The website consumes `fos-icons/fos-icons` as read-only input.
 `scripts/sync-icons.mjs` produces every generated data file. Do not edit them by hand.
 
 ## Update the icons
 
 ```sh
-git -C ../fedora-icons pull          # or check out the revision you want
-pnpm run sync --source ../fedora-icons
+git -C ../fos-icons pull          # or check out the revision you want
+pnpm run sync --source ../fos-icons
 pnpm test
 git diff --stat src/data public/icons
 ```
@@ -30,7 +30,7 @@ Commit the regenerated files together with `src/data/source-lock.json`.
 | `src/data/catalog.json` | names, categories + counts, tags, aliases, compositions, modifier labels |
 | `src/data/palettes.json` | the twelve Light/Dark duo palettes |
 | `src/data/ui-icons.json` | Regular glyphs the site chrome uses (`UI_ICONS` in the script) |
-| `public/licenses/fedora-icons-LICENSE.txt` | the library's MIT license |
+| `public/licenses/fos-icons-LICENSE.txt` | the library's MIT license |
 | `src/data/source-lock.json` | repository, git revision, whether the checkout had local changes, manifest and snapshot SHA-256 |
 
 `pnpm run sync:check` regenerates in memory and fails if anything differs from

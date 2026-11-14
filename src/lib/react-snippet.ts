@@ -1,7 +1,7 @@
 import type { StyleId } from './catalog';
 import { isDuo } from './svg';
 
-/** Mirrors the naming rule in fedora-icons/react-fedora scripts/build.mjs. */
+/** Mirrors the naming rule in fos-icons/react-fos scripts/build.mjs. */
 export function componentName(name: string, style: StyleId): string {
   const pascal = name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join('');
   return `${/^\d/.test(pascal) ? 'Icon' : ''}${pascal}${style[0].toUpperCase()}${style.slice(1)}`;
@@ -29,5 +29,5 @@ export function reactSnippet(name: string, style: StyleId, options: SnippetOptio
   }
   if (options.modifier) props.push(`modifierColor="${options.modifier}"`);
   const attrs = props.length ? ` ${props.join(' ')}` : '';
-  return `import { ${component} } from '@fedora-icons/react';\n\n<${component}${attrs} />`;
+  return `import { ${component} } from '@fos-icons/react';\n\n<${component}${attrs} />`;
 }

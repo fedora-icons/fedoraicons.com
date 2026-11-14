@@ -19,7 +19,7 @@ import { ColorField, CustomizeControls, Section } from './Customize';
 import { ThemeToggle } from './ThemeToggle';
 import { IconButton, Segmented, UiIcon, useToast } from './ui';
 
-const FEEDBACK_URL = 'https://github.com/fedora-icons/fedoraicons.com/issues/new';
+const FEEDBACK_URL = 'https://github.com/fos-icons/fosicons.com/issues/new';
 
 
 export interface InspectorProps {
@@ -66,7 +66,7 @@ export function Inspector({
   const [busy, setBusy] = useState(false);
 
   const showSecondary = !!source && duo && hasSecondaryRole(source);
-  const modifierDefault = source?.match(/var\(--fedora-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase() ?? null;
+  const modifierDefault = source?.match(/var\(--fos-modifier,\s*(#[0-9a-fA-F]{3,8})\)/)?.[1]?.toUpperCase() ?? null;
   const showModifier = !!source && hasModifierRole(source);
   const filledParts = useMemo(() => !!source && hasFilledDetails(source), [source]);
 

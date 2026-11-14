@@ -8,7 +8,7 @@ export interface SvgColorOptions {
   primary: string;
   /** Duocolor accents. Ignored by styles that have no secondary role. */
   secondary?: string;
-  /** Solid glyph color for named presets that expose `--fedora-modifier`. */
+  /** Solid glyph color for named presets that expose `--fos-modifier`. */
   modifier?: string;
 }
 
@@ -41,23 +41,23 @@ const COLOR_RE = /^(#[0-9a-f]{3,4}|#[0-9a-f]{6}|#[0-9a-f]{8})$/i;
 export const isHexColor = (value: string) => COLOR_RE.test(value.trim());
 
 /** Does this artwork expose an independent modifier color role? */
-export const hasModifierRole = (svg: string) => svg.includes('--fedora-modifier');
+export const hasModifierRole = (svg: string) => svg.includes('--fos-modifier');
 /** Does this artwork use a secondary color role? */
-export const hasSecondaryRole = (svg: string) => svg.includes('--fedora-secondary');
+export const hasSecondaryRole = (svg: string) => svg.includes('--fos-secondary');
 
 function resolveVar(value: string, options: SvgColorOptions): string {
   const match = VAR_RE.exec(value.trim());
   if (!match) return value;
   const [, name, fallback] = match;
   switch (name) {
-    case '--fedora-primary':
+    case '--fos-primary':
       return options.primary;
-    case '--fedora-secondary':
+    case '--fos-secondary':
       return options.secondary ?? fallback ?? options.primary;
-    case '--fedora-modifier':
+    case '--fos-modifier':
       return options.modifier ?? fallback ?? options.primary;
     default:
-      // e.g. --fedora-glyph-color: use the library's own fallback.
+      // e.g. --fos-glyph-color: use the library's own fallback.
       return fallback ? resolveVar(fallback, options) : options.primary;
   }
 }

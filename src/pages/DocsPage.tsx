@@ -152,7 +152,7 @@ export default function DocsPage() {
         <header>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Documentation</h1>
           <p className="mt-3 text-base text-muted">
-            Use Fedora Icons as plain SVG, in React, or in Figma. {nf.format(catalog.icons.length)} icons,
+            Use Fos Icons as plain SVG, in React, or in Figma. {nf.format(catalog.icons.length)} icons,
             each in {catalog.styles.length} styles, on a {catalog.grid}px grid.
           </p>
         </header>
@@ -171,17 +171,17 @@ export default function DocsPage() {
         </Section>
 
         <Section id="svg" title="SVG">
-          <p>Download an icon from the inspector, or copy files from <code>icons/regular/</code>, <code>icons/filled/</code>, <code>icons/duocolor/</code>, or <code>icons/duotone/</code> in the <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/fedora-icons">library repository</a>. There is no runtime dependency or icon font.</p>
+          <p>Download an icon from the inspector, or copy files from <code>icons/regular/</code>, <code>icons/filled/</code>, <code>icons/duocolor/</code>, or <code>icons/duotone/</code> in the <a target="_blank" rel="noreferrer" href="https://github.com/fos-icons/fos-icons">library repository</a>. There is no runtime dependency or icon font.</p>
           <Code lang="html">{`<img src="./icons/regular/text-align-left.svg" width="24" height="24" alt="Align text left">`}</Code>
           <p>To theme with CSS, inline the markup instead: the library&apos;s <code>currentColor</code> follows the parent element&apos;s <code>color</code>. Don&apos;t globally override <code>fill</code> on paths — Solid icons rely on real transparent cutouts.</p>
           <p><strong>Website downloads are standalone.</strong> Files exported here have every color resolved to a concrete value, so they render the same in any viewer or design tool. Masks, clip paths, and the Duotone tint are kept intact. If you want live theming, use the library SVGs.</p>
         </Section>
 
         <Section id="react" title="React">
-          <p><a target="_blank" rel="noreferrer" href="https://www.npmjs.com/package/@fedora-icons/react"><code>@fedora-icons/react</code></a> is on npm. It supports React 18 and 19, ships TypeScript types, and tree-shakes to the icons you import. Source: <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/react-fedora">fedora-icons/react-fedora</a>.</p>
-          <Code lang="sh">{`npm install @fedora-icons/react\n# or\npnpm add @fedora-icons/react`}</Code>
+          <p><a target="_blank" rel="noreferrer" href="https://www.npmjs.com/package/@fos-icons/react"><code>@fos-icons/react</code></a> is on npm. It supports React 18 and 19, ships TypeScript types, and tree-shakes to the icons you import. Source: <a target="_blank" rel="noreferrer" href="https://github.com/fos-icons/react-fos">fos-icons/react-fos</a>.</p>
+          <Code lang="sh">{`npm install @fos-icons/react\n# or\npnpm add @fos-icons/react`}</Code>
           <p>Each style is a separate component: the canonical name in PascalCase plus a style suffix. <code>fuel-pump</code> becomes <code>FuelPumpRegular</code>, <code>FuelPumpFilled</code>, <code>FuelPumpDuocolor</code>, and <code>FuelPumpDuotone</code>. Solid icons use the <code>Filled</code> suffix. Names starting with a digit get an <code>Icon</code> prefix.</p>
-          <Code lang="tsx">{`import { CameraRegular, CameraDuocolor } from '@fedora-icons/react';
+          <Code lang="tsx">{`import { CameraRegular, CameraDuocolor } from '@fos-icons/react';
 
 <CameraRegular size={24} />
 <CameraDuocolor size={32} primaryColor="#245B9E" secondaryColor="#60A5FA" />`}</Code>
@@ -190,16 +190,16 @@ export default function DocsPage() {
             <li>Regular and Filled inherit <code>currentColor</code>. Duo styles default to blue; set <code>color</code> or <code>primaryColor</code>, and <code>secondaryColor</code> for accents.</li>
             <li>Named presets with an independent glyph color accept <code>modifierColor</code>.</li>
             <li>Icons are decorative by default (<code>aria-hidden</code>). Pass <code>title</code>, <code>aria-label</code>, or <code>aria-labelledby</code> for meaningful icons.</li>
-            <li>Root imports are tree-shakeable; <code>@fedora-icons/react/filled</code> and <code>@fedora-icons/react/regular/camera</code> entry points also exist.</li>
+            <li>Root imports are tree-shakeable; <code>@fos-icons/react/filled</code> and <code>@fos-icons/react/regular/camera</code> entry points also exist.</li>
           </ul>
           <p>The inspector&apos;s React example uses these exact props.</p>
         </Section>
 
         <Section id="figma" title="Figma">
-          <p>The Fedora Icons Figma library holds every core icon as a component set with <code>Style=Regular/Filled/Duocolor/Duotone</code> and <code>Size=24</code>. Its <strong>Get Started</strong> page covers styles, instances, themes, modifiers, and exports.</p>
+          <p>The Fos Icons Figma library holds every core icon as a component set with <code>Style=Regular/Filled/Duocolor/Duotone</code> and <code>Size=24</code>. Its <strong>Get Started</strong> page covers styles, instances, themes, modifiers, and exports.</p>
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Fedora / Theme</strong> switches Light and Dark, and holds the twelve duo palettes.</li>
-            <li><strong>Fedora / Stroke</strong> offers 16px (1px), 24px (1.25px, default), and 32px (1.5px) stroke presets. These change stroke weight only, not icon dimensions.</li>
+            <li><strong>Fos / Theme</strong> switches Light and Dark, and holds the twelve duo palettes.</li>
+            <li><strong>Fos / Stroke</strong> offers 16px (1px), 24px (1.25px, default), and 32px (1.5px) stroke presets. These change stroke weight only, not icon dimensions.</li>
             <li>Named icon instances expose their nested <strong>Modifier</strong> controls in the properties panel.</li>
           </ul>
           <p>SVGs downloaded here can also be pasted or dropped into Figma; their colors are already resolved.</p>
@@ -208,10 +208,10 @@ export default function DocsPage() {
         <Section id="colors" title="Colors">
           <p>Regular and Solid are single-color icons. Duocolor and Duotone use two CSS custom properties with blue defaults:</p>
           <Code lang="css">{`.toolbar svg {
-  --fedora-primary: #245B9E;
-  --fedora-secondary: #5B87B7;
+  --fos-primary: #245B9E;
+  --fos-secondary: #5B87B7;
 }`}</Code>
-          <p>Duocolor uses the secondary color for details; single-contour icons stay primary-only. Duotone tints closed shapes with 16% of the primary color. Named presets add <code>--fedora-modifier</code> for their solid glyph.</p>
+          <p>Duocolor uses the secondary color for details; single-contour icons stay primary-only. Duotone tints closed shapes with 16% of the primary color. Named presets add <code>--fos-modifier</code> for their solid glyph.</p>
           <p>The twelve library palettes, each with Light and Dark pairs:</p>
           <ul className="grid grid-cols-2 gap-2 !pl-0 sm:grid-cols-3" role="list">
             {palettes.palettes.map((p) => (
@@ -229,7 +229,7 @@ export default function DocsPage() {
         </Section>
 
         <Section id="sizes" title="Sizes">
-          <p>Every icon is authored at <strong>24px</strong>. Other sizes are scaled from that master — Fedora does not yet have separately authored optical sizes. Check icons at their final size, especially below 20px.</p>
+          <p>Every icon is authored at <strong>24px</strong>. Other sizes are scaled from that master — Fos Icons does not yet have separately authored optical sizes. Check icons at their final size, especially below 20px.</p>
         </Section>
 
         <Section id="modifiers" title="Modifiers">
@@ -250,7 +250,7 @@ export default function DocsPage() {
         </Section>
 
         <Section id="licensing" title="Licensing">
-          <p>The core icons and tooling are available under the <a href="/licenses/fedora-icons-LICENSE.txt">MIT License</a>.</p>
+          <p>The core icons and tooling are available under the <a href="/licenses/fos-icons-LICENSE.txt">MIT License</a>.</p>
           <p>Brand icons are <strong>not</strong> covered by the MIT license. All brand icons belong to their respective owners, and their use is governed by each owner&apos;s brand guidelines. No affiliation or endorsement is implied.</p>
         </Section>
 
@@ -258,16 +258,16 @@ export default function DocsPage() {
           <p>This site sets no cookies and runs no analytics, ads, or tracking scripts. Fonts and icons are served from this site, not from third parties.</p>
           <p>Your browser&apos;s local storage keeps three preferences, and only on your device:</p>
           <ul className="list-disc space-y-1 pl-5">
-            <li><code>fedora-theme</code>: light or dark, when you pick one instead of following your system.</li>
-            <li><code>fedora-pane-collapsed</code>: whether the side pane is collapsed.</li>
-            <li><code>fedora-pane-width</code>: the side pane&apos;s width, when you resize it.</li>
+            <li><code>fos-theme</code>: light or dark, when you pick one instead of following your system.</li>
+            <li><code>fos-pane-collapsed</code>: whether the side pane is collapsed.</li>
+            <li><code>fos-pane-width</code>: the side pane&apos;s width, when you resize it.</li>
           </ul>
           <p>Searches, customizations, and downloads happen in your browser and aren&apos;t sent anywhere. Links to GitHub, npm, and Figma take you to those services, which have their own privacy policies. Like any website, the server hosting this one may keep standard request logs.</p>
           <p>To clear the stored preferences, clear this site&apos;s data in your browser settings.</p>
         </Section>
 
         <Section id="source" title="Source data">
-          <p>This site is generated from the <a target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/fedora-icons">fedora-icons</a> library. Counts, categories, names, and aliases come from its manifest.</p>
+          <p>This site is generated from the <a target="_blank" rel="noreferrer" href="https://github.com/fos-icons/fos-icons">fos-icons</a> library. Counts, categories, names, and aliases come from its manifest.</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-line p-4 font-mono text-xs text-muted">
             <dt>Revision</dt><dd className="break-all text-ink">{lock.revision ?? 'unknown'}{lock.dirty ? ' (with uncommitted changes)' : ''}</dd>
             <dt>Manifest</dt><dd className="break-all text-ink">sha256:{lock.manifestSha256}</dd>

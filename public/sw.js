@@ -1,4 +1,4 @@
-// Fedora Icons service worker: makes the site installable and fast on
+// Fos Icons service worker: makes the site installable and fast on
 // repeat visits, and keeps it usable offline.
 //
 // - Pages: network first, falling back to the cached copy offline.

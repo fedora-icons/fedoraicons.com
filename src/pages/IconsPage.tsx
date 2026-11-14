@@ -27,7 +27,7 @@ const config: UrlStateConfig = {
   core: { categories: catalog.categories.map((c) => c.name), icons: new Set(iconsByName.keys()) },
   brands: { categories: brandCategories.map((c) => c.name), icons: new Set(brandsByName.keys()) },
 };
-const COLLAPSE_KEY = 'fedora-pane-collapsed';
+const COLLAPSE_KEY = 'fos-pane-collapsed';
 
 /** Search ghost text: the prompt first, then rotating tips for every trick. */
 const DESKTOP_TIPS = ['icons.tip.multi', 'icons.tip.slash', 'icons.tip.arrows', 'icons.tip.pane', 'icons.tip.esc', 'icons.tip.share'] as const;
@@ -126,7 +126,7 @@ function BrandsEmpty() {
         {t('brands.emptyBody')}
       </p>
       <p className="mt-5 text-sm">
-        <a className="text-brand underline underline-offset-2" target="_blank" rel="noreferrer" href="https://github.com/fedora-icons/fedora-icons/blob/main/BRANDS.md">
+        <a className="text-brand underline underline-offset-2" target="_blank" rel="noreferrer" href="https://github.com/fos-icons/fos-icons/blob/main/BRANDS.md">
           {t('brands.policy')}
         </a>
         <span className="mx-2 text-faint">·</span>

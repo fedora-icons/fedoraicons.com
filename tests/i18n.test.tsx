@@ -106,8 +106,8 @@ describe('a translated page', () => {
   it('writes language-specific metadata with hreflang alternates', () => {
     const i18n = createI18n('en');
     const tags = headTags(pageMeta('docs', i18n), i18n);
-    expect(tags).toContain('<link rel="alternate" hreflang="en" href="https://www.fedoraicons.com/docs" />');
-    expect(tags).toContain('<link rel="alternate" hreflang="x-default" href="https://www.fedoraicons.com/docs" />');
+    expect(tags).toContain('<link rel="alternate" hreflang="en" href="https://www.fosicons.com/docs" />');
+    expect(tags).toContain('<link rel="alternate" hreflang="x-default" href="https://www.fosicons.com/docs" />');
     expect(tags).toContain('<meta property="og:locale" content="en_US" />');
   });
 

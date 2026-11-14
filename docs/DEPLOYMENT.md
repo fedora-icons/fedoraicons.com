@@ -1,7 +1,7 @@
 # Deployment
 
 `pnpm run build` writes a static site to `dist/`. No server code is needed,
-and the build doesn't need a fedora-icons checkout (the synced data is
+and the build doesn't need a fos-icons checkout (the synced data is
 committed). Use Node 24 (`.nvmrc`, `engines`) and pnpm (`packageManager`); dependencies
 install from the public npm registry (`.npmrc`). `pnpm-workspace.yaml` allows
 esbuild's install script, which fetches Vite's native bundler binary.
@@ -15,15 +15,15 @@ the two in step when upgrading), output
 `/docs/`), immutable caching for hashed assets, short caching for artwork,
 no caching for `sw.js` and the manifest, and basic security headers.
 
-1. In Vercel, Add New → Project, and import `fedora-icons/fedoraicons.com`.
+1. In Vercel, Add New → Project, and import `fos-icons/fosicons.com`.
    The settings come from `vercel.json`; Node comes from `engines`.
 2. Deploy. Pushes to `main` deploy to production; pull requests get previews.
-3. Domains: `www.fedoraicons.com` is the production domain, and
-   `fedoraicons.com` redirects to it. `SITE_URL` in `src/lib/seo.ts` must
+3. Domains: `www.fosicons.com` is the production domain, and
+   `fosicons.com` redirects to it. `SITE_URL` in `src/lib/seo.ts` must
    match the domain that serves the site (not the one that redirects), since
    canonical links, the sitemap, and share images use it.
 
-Live at https://www.fedoraicons.com since 2026-11-13.
+Live at https://www.fosicons.com since 2026-11-13.
 
 ## Any static host
 

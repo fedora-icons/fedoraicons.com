@@ -10,22 +10,22 @@
  */
 const en = {
   // Site
-  'site.name': 'Fedora Icons',
+  'site.name': 'Fos Icons',
   'site.skipToContent': 'Skip to content',
-  'site.home': 'Fedora Icons home',
+  'site.home': 'Fos Icons home',
   'site.newTab': ' (opens in a new tab)',
 
   // Page metadata (titles ≤ 60 characters, descriptions ~150)
-  'meta.home.title': 'Fedora Icons — Find the right icon, then ship it',
+  'meta.home.title': 'Fos Icons — Find the right icon, then ship it',
   'meta.home.description': '{icons} free, {license}-licensed SVG icons in {styles}. Search, recolor, and resize them, then export SVG or PNG, or use them in React and Figma.',
-  'meta.docs.title': 'Docs — Use Fedora Icons in SVG, React, and Figma',
-  'meta.docs.description': 'How to use Fedora Icons: the four styles, SVG files, the React package, Figma, colors, sizes, {modifiers} modifiers, accessibility, licensing, and privacy.',
-  'meta.brands.title': 'Brand icons — Fedora Icons',
+  'meta.docs.title': 'Docs — Use Fos Icons in SVG, React, and Figma',
+  'meta.docs.description': 'How to use Fos Icons: the four styles, SVG files, the React package, Figma, colors, sizes, {modifiers} modifiers, accessibility, licensing, and privacy.',
+  'meta.brands.title': 'Brand icons — Fos Icons',
   'meta.brands.description': '{brands} brand logos, including social networks, Google Chrome, and Microsoft Edge, Teams, and Windows, shown as their owners provide them. Not covered by the {license} license.',
-  'meta.notFound.title': 'Page not found — Fedora Icons',
-  'meta.notFound.description': 'That page does not exist. Browse Fedora Icons instead.',
+  'meta.notFound.title': 'Page not found — Fos Icons',
+  'meta.notFound.description': 'That page does not exist. Browse Fos Icons instead.',
   'meta.library.description': '{icons} open-source SVG icons on a 24px grid in {styles}, with {modifiers} reusable modifiers.',
-  'meta.shareImageAlt': 'Fedora Icons: open-source icons in Regular, Solid, Duocolor, and Duotone, shown on a grid.',
+  'meta.shareImageAlt': 'Fos Icons: open-source icons in Regular, Solid, Duocolor, and Duotone, shown on a grid.',
 
   // Header
   'header.main': 'Main',
@@ -44,7 +44,7 @@ const en = {
   'footer.github': 'GitHub',
   'footer.license': 'License',
   'footer.npm': 'npm',
-  'footer.elsewhere': 'Fedora Icons elsewhere',
+  'footer.elsewhere': 'Fos Icons elsewhere',
   'footer.language': 'Language',
 
   // Theme
@@ -201,7 +201,7 @@ const en = {
   'inspector.reactCopied': 'React example copied',
   'inspector.reactStroke': '<strong>The React package draws the standard {base}px stroke at every size</strong>; use Download SVG to keep this {value}px stroke. ',
   'inspector.reactModifier': '<strong>The React package has no component for {name} with {modifier}</strong>; this example shows the plain icon. Use Download SVG to keep the modifier. ',
-  'inspector.reactInstall': 'Install with <code>npm install @fedora-icons/react</code>. <link>React docs</link>.',
+  'inspector.reactInstall': 'Install with <code>npm install @fos-icons/react</code>. <link>React docs</link>.',
 
   // Modifiers
   'modifiers.none': 'None',

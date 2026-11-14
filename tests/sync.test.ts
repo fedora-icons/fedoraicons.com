@@ -10,7 +10,7 @@ const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 const STYLES = ['regular', 'filled', 'duocolor', 'duotone'];
 
 function fakeLibrary(tamper = false) {
-  const dir = mkdtempSync(join(tmpdir(), 'fedora-lib-'));
+  const dir = mkdtempSync(join(tmpdir(), 'fos-lib-'));
   const names = [...UI_ICONS, 'widget'];
   const icons = names.map((name: string) => {
     const files: Record<string, string> = {};

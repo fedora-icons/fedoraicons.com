@@ -69,7 +69,7 @@ export function SelectionPanel({
           entries.push({ name: `${name}-${slug}-${px}px.png`, data: new Uint8Array(await png.arrayBuffer()) });
         }
       }
-      const zipName = `fedora-icons-${kind === 'brand' ? 'brands-' : ''}${slug}-${names.length}-${format}.zip`;
+      const zipName = `fos-icons-${kind === 'brand' ? 'brands-' : ''}${slug}-${names.length}-${format}.zip`;
       downloadBlob(await buildZip(entries), zipName);
       toast('success', i18n.t('selection.downloaded', { count: names.length, file: zipName }));
     } catch (error) {

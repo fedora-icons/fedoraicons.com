@@ -10,7 +10,7 @@ describe('React snippet', () => {
 
   it('uses documented props only', () => {
     expect(reactSnippet('camera', 'regular', { size: 24, color: null })).toBe(
-      "import { CameraRegular } from '@fedora-icons/react';\n\n<CameraRegular />",
+      "import { CameraRegular } from '@fos-icons/react';\n\n<CameraRegular />",
     );
     const duo = reactSnippet('user-add', 'duocolor', { size: 32, color: null, primary: '#111111', secondary: '#222222', modifier: '#333333' });
     expect(duo).toContain('<UserAddDuocolor size={32} primaryColor="#111111" secondaryColor="#222222" modifierColor="#333333" />');

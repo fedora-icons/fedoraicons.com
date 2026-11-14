@@ -1,9 +1,9 @@
 {
-  "name": "fedoraicons.com",
+  "name": "fosicons.com",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "The Fedora Icons website: search, customize, and export icons.",
+  "description": "The Fos Icons website: search, customize, and export icons.",
   "scripts": {
     "sync": "node scripts/sync-icons.mjs",
     "sync:check": "node scripts/sync-icons.mjs --check",
