@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { LocalLink, useI18n } from '../i18n';
 import markRegular from '../brand/mark-regular.svg?raw';
-import { CONTAINER, PaneHostContext } from '../lib/layout';
+import { CONTAINER, HeaderSlotContext, PaneHostContext } from '../lib/layout';
 import { LIBRARY_URL, NPM_URL } from '../lib/links';
 import { useDocumentMeta } from '../lib/useDocumentMeta';
 import { HeaderActions } from './HeaderActions';
@@ -14,11 +14,13 @@ const footerLink = 'inline-flex items-center gap-1 rounded text-muted underline-
 
 export function Layout() {
   const [paneHost, setPaneHost] = useState<HTMLElement | null>(null);
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   useDocumentMeta();
   const { t } = useI18n();
   const { pathname } = useLocation();
   return (
     <PaneHostContext.Provider value={paneHost}>
+    <HeaderSlotContext.Provider value={headerSlot}>
       <div className="flex min-h-dvh">
         <div className="flex min-w-0 flex-1 flex-col">
           <a href="#main" className="sr-only z-50 rounded-lg bg-surface px-3 py-2 focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
@@ -30,6 +32,7 @@ export function Layout() {
                 <span className="glyph size-7 text-ink" aria-hidden="true" dangerouslySetInnerHTML={{ __html: markRegular }} />
                 <span className="whitespace-nowrap font-display text-[20px] font-semibold tracking-tight">{t('site.name')}</span>
               </LocalLink>
+              <div ref={setHeaderSlot} className="hidden min-w-0 flex-1 justify-center px-6 empty:hidden md:flex" />
               <div className="ml-auto flex items-center gap-2 md:gap-5">
                 <HeaderActions />
                 {/* With the desktop side pane open, the toggle lives in the pane's bar. */}
@@ -66,6 +69,7 @@ export function Layout() {
         </div>
         <div ref={setPaneHost} className="hidden shrink-0 lg:block" />
       </div>
+    </HeaderSlotContext.Provider>
     </PaneHostContext.Provider>
   );
 }

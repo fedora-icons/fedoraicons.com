@@ -2,11 +2,13 @@ import { UiIcon } from '../components/ui';
 import { DEFAULT_LOCALE, useI18n } from '../i18n';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { catalog, lock, palettes, STYLE_META } from '../lib/catalog';
+import { catalog, ICONS_ROUNDED, lock, palettes, STYLE_META } from '../lib/catalog';
 import { copyText } from '../lib/export';
 import { CodeBlock } from '../components/CodeBlock';
 import { useToast } from '../components/ui';
-import { CONTAINER } from '../lib/layout';
+import { createPortal } from 'react-dom';
+import { CONTAINER, useHeaderSlot } from '../lib/layout';
+import { useMediaQuery } from '../lib/theme';
 import { useSlashToFocus } from './IconsPage';
 
 const nf = new Intl.NumberFormat('en-US');
@@ -222,15 +224,20 @@ export default function DocsPage() {
   // Other languages show this English page until a translation exists (see src/i18n/content.ts).
   const { t, config, path } = useI18n();
   const english = config.code !== DEFAULT_LOCALE;
+  // On desktop the search box sits in the site header; on phones (and without a header) in the page.
+  const headerSlot = useHeaderSlot();
+  const desktop = useMediaQuery('(min-width: 768px)');
+  const search = <DocsSearch value={query} onChange={setQuery} />;
+  const inHeader = headerSlot && desktop;
 
   return (
-    <div className={`docs-page ${CONTAINER} flex flex-col gap-6 pb-20 pt-8 sm:pt-12 md:flex-row md:gap-12`}>
-      <aside className="h-fit shrink-0 md:sticky md:top-8 md:w-44">
-        <DocsSearch value={query} onChange={setQuery} />
-        <p role="status" className="sr-only">
-          {searching ? `${shown.length} ${shown.length === 1 ? 'section matches' : 'sections match'}` : ''}
-        </p>
-        <nav aria-label="Documentation" className="mt-6 hidden md:block">
+    <div className={`docs-page ${CONTAINER} flex gap-12 pb-20 pt-8 sm:pt-12`}>
+      {inHeader && createPortal(<div className="w-full max-w-md">{search}</div>, headerSlot)}
+      <p role="status" className="sr-only">
+        {searching ? `${shown.length} ${shown.length === 1 ? 'section matches' : 'sections match'}` : ''}
+      </p>
+      <aside className="sticky top-8 hidden h-fit w-44 shrink-0 md:block">
+        <nav aria-label="Documentation">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">On this page</p>
           {shown.length === 0 && <p className="text-sm text-muted">No matches</p>}
           <ul className="border-l border-line text-sm empty:hidden">
@@ -253,6 +260,7 @@ export default function DocsPage() {
       </aside>
 
       <article lang={english ? 'en' : undefined} className="min-w-0 max-w-[720px] flex-1 space-y-10">
+        {!inHeader && search}
         {english && (
           <p lang={config.code} className="inline-flex items-center gap-2 rounded-lg bg-sunken px-3 py-1.5 text-sm text-muted">
             <UiIcon name="globe" className="size-4" /> {t('docs.englishOnly')}
@@ -261,7 +269,7 @@ export default function DocsPage() {
         <header>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Documentation</h1>
           <p className="mt-3 text-base text-muted">
-            Use Fos Icons as plain SVG, in React, or in Figma. {nf.format(catalog.icons.length)} icons,
+            Use Fos Icons as plain SVG, in React, or in Figma. {nf.format(ICONS_ROUNDED)}+ icons,
             each in {catalog.styles.length} styles, on a {catalog.grid}px grid.
           </p>
         </header>
