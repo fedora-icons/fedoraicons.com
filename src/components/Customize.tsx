@@ -98,9 +98,69 @@ export function Section({
 
 const fmtStroke = (w: number) => `${Number(w.toFixed(2))}px`;
 
+/** The Size section: a slider for common sizes plus a field for any size. */
+export function SizeControl({ look, onChange }: { look: Look; onChange: (patch: Partial<Look>) => void }) {
+  const { t } = useI18n();
+  const uid = useId();
+  const [sizeText, setSizeText] = useState(String(look.size));
+  useEffect(() => setSizeText(String(look.size)), [look.size]);
+
+  const commitSize = (value: number) => {
+    const next = Math.round(Math.min(MAX_SIZE, Math.max(MIN_SIZE, value)));
+    onChange({ size: next });
+    setSizeText(String(next));
+  };
+
+  return (
+    <Section
+      title={t('customize.size')}
+      aside={(
+        <label className="flex items-center gap-1.5 text-xs text-muted">
+          <span className="sr-only">{t('customize.sizeCustom')}</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={MIN_SIZE}
+            max={MAX_SIZE}
+            value={sizeText}
+            onChange={(e) => {
+              setSizeText(e.target.value);
+              const n = Number(e.target.value);
+              if (Number.isFinite(n) && n >= MIN_SIZE && n <= MAX_SIZE) onChange({ size: Math.round(n) });
+            }}
+            onBlur={() => commitSize(Number(sizeText) || DEFAULT_LOOK.size)}
+            className="h-7 w-14 rounded-md border border-line-strong bg-surface px-2 text-right font-mono text-xs tabular-nums text-ink"
+          />
+          {t('customize.px')}
+        </label>
+      )}
+    >
+      <label htmlFor={`${uid}-size`} className="sr-only">{t('customize.size')}</label>
+      <input
+        id={`${uid}-size`}
+        type="range"
+        min={SIZE_SLIDER_MIN}
+        max={SIZE_SLIDER_MAX}
+        step={SIZE_STEP}
+        value={Math.min(SIZE_SLIDER_MAX, Math.max(SIZE_SLIDER_MIN, look.size))}
+        aria-valuetext={t('customize.pxValue', { value: look.size })}
+        onChange={(e) => commitSize(Number(e.target.value))}
+        className="range w-full"
+      />
+      <div className="mt-1 flex justify-between text-[11px] tabular-nums text-faint" aria-hidden="true">
+        <span>{t('customize.pxValue', { value: SIZE_SLIDER_MIN })}</span>
+        <span>{t('customize.pxValue', { value: SIZE_SLIDER_MAX })}</span>
+      </div>
+      {look.size > GRID_MAX_SIZE && (
+        <p className="mt-2 text-xs leading-relaxed text-faint">{t('customize.gridLimit', { max: GRID_MAX_SIZE, size: look.size })}</p>
+      )}
+    </Section>
+  );
+}
+
 /** Size, stroke, and color: shared by the grid-wide panel and the inspector. */
 export function CustomizeControls({
-  look, onChange, style, kind = 'core', footnote, strokeFootnote,
+  look, onChange, style, kind = 'core', footnote, strokeFootnote, showSize = true,
 }: {
   look: Look;
   onChange: (patch: Partial<Look>) => void;
@@ -110,68 +170,20 @@ export function CustomizeControls({
   footnote?: ReactNode;
   /** Stroke notes that only make sense for one icon (e.g. filled parts). */
   strokeFootnote?: ReactNode;
+  /** Off when the caller places SizeControl itself (the inspector puts it above Modifier). */
+  showSize?: boolean;
 }) {
   const { resolved: theme, setPreference } = useTheme();
   const { t } = useI18n();
   const uid = useId();
   const duo = isDuo(style);
   const r = resolveLook(look, theme);
-  const [sizeText, setSizeText] = useState(String(look.size));
-  useEffect(() => setSizeText(String(look.size)), [look.size]);
-
-  const commitSize = (value: number) => {
-    const next = Math.round(Math.min(MAX_SIZE, Math.max(MIN_SIZE, value)));
-    onChange({ size: next });
-    setSizeText(String(next));
-  };
   const canStroke = strokeAdjustable(style, kind);
   const stroke = strokeOf(look);
 
   return (
     <>
-      <Section
-        title={t('customize.size')}
-        aside={(
-          <label className="flex items-center gap-1.5 text-xs text-muted">
-            <span className="sr-only">{t('customize.sizeCustom')}</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={MIN_SIZE}
-              max={MAX_SIZE}
-              value={sizeText}
-              onChange={(e) => {
-                setSizeText(e.target.value);
-                const n = Number(e.target.value);
-                if (Number.isFinite(n) && n >= MIN_SIZE && n <= MAX_SIZE) onChange({ size: Math.round(n) });
-              }}
-              onBlur={() => commitSize(Number(sizeText) || DEFAULT_LOOK.size)}
-              className="h-7 w-14 rounded-md border border-line-strong bg-surface px-2 text-right font-mono text-xs tabular-nums text-ink"
-            />
-            {t('customize.px')}
-          </label>
-        )}
-      >
-        <label htmlFor={`${uid}-size`} className="sr-only">{t('customize.size')}</label>
-        <input
-          id={`${uid}-size`}
-          type="range"
-          min={SIZE_SLIDER_MIN}
-          max={SIZE_SLIDER_MAX}
-          step={SIZE_STEP}
-          value={Math.min(SIZE_SLIDER_MAX, Math.max(SIZE_SLIDER_MIN, look.size))}
-          aria-valuetext={t('customize.pxValue', { value: look.size })}
-          onChange={(e) => commitSize(Number(e.target.value))}
-          className="range w-full"
-        />
-        <div className="mt-1 flex justify-between text-[11px] tabular-nums text-faint" aria-hidden="true">
-          <span>{t('customize.pxValue', { value: SIZE_SLIDER_MIN })}</span>
-          <span>{t('customize.pxValue', { value: SIZE_SLIDER_MAX })}</span>
-        </div>
-        {look.size > GRID_MAX_SIZE && (
-          <p className="mt-2 text-xs leading-relaxed text-faint">{t('customize.gridLimit', { max: GRID_MAX_SIZE, size: look.size })}</p>
-        )}
-      </Section>
+      {showSize && <SizeControl look={look} onChange={onChange} />}
 
       <Section
         title={t('customize.stroke')}

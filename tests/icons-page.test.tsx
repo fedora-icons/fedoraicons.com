@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -177,6 +177,33 @@ describe('Icons page', () => {
 
     await user.click(screen.getByRole('button', { name: 'None' }));
     expect(preview.innerHTML).not.toContain('clip-path');
+  });
+
+  it('opens "clock with sparkle" as the clock icon with the Sparkle modifier', async () => {
+    renderAt('/?q=clock%20with%20sparkle');
+    expect(await screen.findByRole('heading', { name: 'clock', level: 2 }, { timeout: 8000 })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Sparkle modifier/ }).getAttribute('aria-pressed')).toBe('true'), { timeout: 8000 });
+    expect(screen.getByText(/Opening clock with the Sparkle modifier/)).toBeTruthy();
+    const preview = screen.getByRole('img', { name: /clock, Regular, scaled preview/ });
+    expect(preview.innerHTML).toContain('clip-path');
+  });
+
+  it('reads "edit clock" the same as "clock with edit"', async () => {
+    renderAt('/?q=edit%20clock');
+    expect(await screen.findByRole('heading', { name: 'clock', level: 2 }, { timeout: 8000 })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Edit modifier/ }).getAttribute('aria-pressed')).toBe('true'), { timeout: 8000 });
+  });
+
+  it('lets a real icon win over a modifier reading', async () => {
+    renderAt('/?q=check%20user');
+    await waitFor(() => expect(document.querySelector('button[data-icon="user-check"]')).toBeTruthy(), { timeout: 8000 });
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith('modifiers.json'))).toBe(false);
+  });
+
+  it('restores a modifier and corner from a shared link', async () => {
+    renderAt('/?icon=clock&modifier=sparkle&corner=top-right');
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Sparkle modifier/ }).getAttribute('aria-pressed')).toBe('true'), { timeout: 8000 });
+    expect(screen.getByRole('button', { name: 'Top right' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('offers file-type labels on files, only in the corners they support', async () => {

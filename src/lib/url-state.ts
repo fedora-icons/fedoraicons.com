@@ -1,4 +1,5 @@
 import { STYLE_META, styleFromSlug, type StyleId } from './catalog';
+import { CORNERS, type Corner } from './modifiers';
 
 /** The style switcher's options: the four core styles, then Brands. */
 export type View = StyleId | 'brands';
@@ -13,6 +14,9 @@ export interface CatalogState {
   /** Regular or Solid within Brands; ignored for core styles. */
   brandStyle: BrandStyle;
   icon: string | null;
+  /** A modifier tried on the open icon (library name), and where; only with `icon`. */
+  modifier: string | null;
+  corner: Corner | null;
 }
 
 export interface CollectionConfig {
@@ -34,12 +38,18 @@ export function parseState(search: string, config: UrlStateConfig): CatalogState
   const collection = style === 'brands' ? config.brands : config.core;
   const category = params.get('category');
   const icon = params.get('icon');
+  const iconOk = !!icon && collection.icons.has(icon);
+  const modifier = params.get('modifier');
+  const modifierOk = iconOk && style !== 'brands' && !!modifier && /^[a-z0-9-]{1,40}$/.test(modifier);
+  const corner = params.get('corner') as Corner | null;
   return {
     q: (params.get('q') ?? '').slice(0, 100),
     category: category && collection.categories.includes(category) ? category : null,
     style,
     brandStyle: style === 'brands' ? styleFromSlug(params.get('variant'), BRAND_STYLES) as BrandStyle ?? 'regular' : 'regular',
-    icon: icon && collection.icons.has(icon) ? icon : null,
+    icon: iconOk ? icon : null,
+    modifier: modifierOk ? modifier : null,
+    corner: modifierOk && corner && CORNERS.includes(corner) ? corner : null,
   };
 }
 
@@ -55,6 +65,10 @@ export function serializeState(state: CatalogState, config: Pick<UrlStateConfig,
     params.set('style', STYLE_META[state.style].slug);
   }
   if (state.icon) params.set('icon', state.icon);
+  if (state.icon && state.modifier) {
+    params.set('modifier', state.modifier);
+    if (state.corner) params.set('corner', state.corner);
+  }
   const out = params.toString();
   return out ? `?${out}` : '';
 }

@@ -10,12 +10,12 @@ import { reactSnippet } from '../lib/react-snippet';
 import { resolveLook, strokeAdjustable, strokeOf, type Look } from '../lib/look';
 import { BASE_STROKE, buildSvg, hasFilledDetails, hasModifierRole, hasSecondaryRole, isDuo } from '../lib/svg';
 import { PANE_WIDTH, usePaneWidth } from '../lib/pane-width';
-import { useTheme } from '../lib/theme';
+import { useMediaQuery, useTheme } from '../lib/theme';
 import { CodeBlock } from './CodeBlock';
 import { ExportPanel } from './ExportPanel';
 import { ModifierPicker, useModifiers, type ModifierChoice } from './ModifierPicker';
-import { composeSvg, modifiersFor, type Corner } from '../lib/modifiers';
-import { ColorField, CustomizeControls, Section } from './Customize';
+import { composeSvg, initialCorner, modifiersFor, type Corner } from '../lib/modifiers';
+import { ColorField, CustomizeControls, Section, SizeControl } from './Customize';
 import { ThemeToggle } from './ThemeToggle';
 import { IconButton, Segmented, UiIcon, useToast } from './ui';
 
@@ -35,10 +35,18 @@ export interface InspectorProps {
   /** Brand assets: no React package, no duo controls, no stroke control. */
   kind?: 'core' | 'brand';
   headingId: string;
+  /** The modifier being tried (from the URL), by library name; its corner, or null for the default. */
+  badgeRequest?: { name: string; corner: Corner | null } | null;
+  /** Called when the user picks or clears a modifier, or moves it. */
+  onBadgeChange?: (choice: { name: string; corner: Corner } | null) => void;
 }
+
+/** Largest size the inspector's scaled sample shows at 1:1; bigger sizes show at this size. */
+const SAMPLE_MAX = 64;
 
 export function Inspector({
   icon, style, styles, source: librarySource, look, onLookChange, onStyleChange, onSelectIcon, onClose, kind = 'core', headingId,
+  badgeRequest = null, onBadgeChange,
 }: InspectorProps) {
   const toast = useToast();
   const i18n = useI18n();
@@ -48,11 +56,24 @@ export function Inspector({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const r = resolveLook(look, theme);
   const size = look.size;
+  const desktop = useMediaQuery('(min-width: 1024px)');
+  /** The "scaled" sample shows the icon at its real size, up to SAMPLE_MAX; its box is at least 40px. */
+  const sampleSize = Math.min(size, SAMPLE_MAX);
+  const sampleBox = Math.max(40, sampleSize);
   const strokeWidth = strokeAdjustable(style, kind) ? strokeOf(look) : undefined;
 
   const [modifier, setModifier] = useState<string | null>(null);
-  const [badge, setBadge] = useState<ModifierChoice | null>(null);
   const canTryModifiers = kind === 'core' && !icon.composition;
+  const modifiers = useModifiers(canTryModifiers && !!librarySource);
+  /** The modifier on the icon: the URL's request, once the library list has loaded and allows it here. */
+  const badge = useMemo<ModifierChoice | null>(() => {
+    if (!canTryModifiers || !badgeRequest || !modifiers.list) return null;
+    const found = modifiersFor(icon.name, modifiers.list).find((m) => m.name === badgeRequest.name);
+    if (!found) return null;
+    const corner = badgeRequest.corner && found.positions[badgeRequest.corner] ? badgeRequest.corner : initialCorner(found);
+    return { modifier: found, corner };
+  }, [canTryModifiers, badgeRequest, modifiers.list, icon.name]);
+  const setBadge = (choice: ModifierChoice | null) => onBadgeChange?.(choice && { name: choice.modifier.name, corner: choice.corner });
   const composed = useMemo(() => {
     if (!badge || !librarySource) return { svg: librarySource, error: null };
     try {
@@ -102,7 +123,7 @@ export function Inspector({
       return {
         large: buildSvg(source, { ...colors, size: 160, idPrefix: `${uid}-l`, strokeWidth }),
         native: buildSvg(source, { ...colors, size: 24, idPrefix: `${uid}-n`, strokeWidth }),
-        actual: buildSvg(source, { ...colors, size: Math.min(size, 128), idPrefix: `${uid}-a`, strokeWidth }),
+        actual: buildSvg(source, { ...colors, size: Math.min(size, SAMPLE_MAX), idPrefix: `${uid}-a`, strokeWidth }),
       };
     } catch {
       return null;
@@ -126,7 +147,6 @@ export function Inspector({
     return { map, names };
   }, [family]);
   const authoredMatch = badge ? authored.names.get(`${badge.modifier.name}:${badge.corner}`) : undefined;
-  const modifiers = useModifiers(canTryModifiers && !!librarySource);
 
   const run = async (action: () => Promise<void> | void, success: string) => {
     setBusy(true);
@@ -187,13 +207,16 @@ export function Inspector({
             <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{t('customize.pxValue', { value: 24 })}</strong>{t('inspector.native')}</figcaption>
           </figure>
           <figure className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
-            <span className="checkerboard flex size-10 items-center justify-center overflow-hidden rounded-lg">
-              {preview && <span data-artwork className="glyph" style={{ width: Math.min(size, 128), height: Math.min(size, 128) }} dangerouslySetInnerHTML={{ __html: preview.actual }} />}
+            {/* Grows with the size (up to SAMPLE_MAX) so size changes, and the badge with them, are visible. */}
+            <span className="checkerboard flex shrink-0 items-center justify-center overflow-hidden rounded-lg" style={{ width: sampleBox, height: sampleBox }}>
+              {preview && <span data-artwork className="glyph" style={{ width: sampleSize, height: sampleSize }} dangerouslySetInnerHTML={{ __html: preview.actual }} />}
             </span>
             <figcaption className="text-xs leading-tight text-muted"><strong className="block font-semibold text-ink">{t('customize.pxValue', { value: size })}</strong>{size === 24 ? t('inspector.selectedSize') : t('inspector.scaled')}</figcaption>
           </figure>
         </div>
       </div>
+
+      <SizeControl look={look} onChange={onLookChange} />
 
       {kind === 'core' && (
         <Section title={t('inspector.modifier')}>
@@ -253,19 +276,23 @@ export function Inspector({
         </Section>
       )}
 
-      <Section title={t('inspector.style')}>
-        <Segmented
-          label={t('icons.styleSwitcher')}
-          size="sm"
-          value={style}
-          onChange={onStyleChange}
-          options={styles.map((s) => ({ value: s, label: t(`style.${s}`), title: t(`style.${s}.description`) }))}
-        />
-      </Section>
+      {/* On desktop the grid's own style switcher sits beside the pane; the phone sheet covers it. */}
+      {!desktop && (
+        <Section title={t('inspector.style')}>
+          <Segmented
+            label={t('icons.styleSwitcher')}
+            size="sm"
+            value={style}
+            onChange={onStyleChange}
+            options={styles.map((s) => ({ value: s, label: t(`style.${s}`), title: t(`style.${s}.description`) }))}
+          />
+        </Section>
+      )}
 
       <CustomizeControls
         look={look}
         onChange={onLookChange}
+        showSize={false}
         style={style}
         kind={kind}
         strokeFootnote={filledParts && strokeWidth !== undefined && strokeWidth !== BASE_STROKE && (

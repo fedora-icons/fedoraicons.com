@@ -90,6 +90,8 @@ const en = {
   'icons.summaryForIn': '{results} for “{query}” in {category}',
   'icons.tip.search': 'Search {count}+ icons by name or category',
   'icons.tip.searchShort': 'Search {count}+ icons',
+  'icons.tip.modifier': 'Tip: type “clock with sparkle” to open an icon with a modifier',
+  'icons.phraseHint': 'Opening {icon} with the {modifier} modifier. Keep typing to change it.',
   'icons.tip.multi': 'Tip: Shift-click icons to select several, then download them as a ZIP',
   'icons.tip.slash': 'Tip: press / anywhere to jump to search',
   'icons.tip.arrows': 'Tip: arrow keys move through the grid, Enter opens an icon',
