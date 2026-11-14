@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CustomizePanel } from '../components/Customize';
 import { GridHelp, IconGrid } from '../components/IconGrid';
 import { Inspector, SidePane } from '../components/Inspector';
+import { useModifiers } from '../components/ModifierPicker';
 import { NoResults } from '../components/NoResults';
 import { SelectionPanel } from '../components/SelectionPanel';
 import { Button, Segmented, UiIcon } from '../components/ui';
@@ -12,6 +13,8 @@ import { availableBrandStyles, brandCategories, brandEntries, hasBrandStyle, loa
 import { catalog, chunksFor, ICONS_ROUNDED, iconsByName, loadIconChunk, loadStyle, type StyleId } from '../lib/catalog';
 import { CONTAINER, usePaneHost } from '../lib/layout';
 import { DEFAULT_LOOK, gridVars, type Look } from '../lib/look';
+import { modifiersFor } from '../lib/modifiers';
+import { hasConnector, parseModifierPhrase } from '../lib/phrase';
 import { createIndex, search, suggest } from '../lib/search';
 import { prepareGridSvg } from '../lib/svg';
 import { useMediaQuery, useTheme } from '../lib/theme';
@@ -30,7 +33,7 @@ const config: UrlStateConfig = {
 const COLLAPSE_KEY = 'fos-pane-collapsed';
 
 /** Search ghost text: the prompt first, then rotating tips for every trick. */
-const DESKTOP_TIPS = ['icons.tip.multi', 'icons.tip.slash', 'icons.tip.arrows', 'icons.tip.pane', 'icons.tip.esc', 'icons.tip.share'] as const;
+const DESKTOP_TIPS = ['icons.tip.modifier', 'icons.tip.multi', 'icons.tip.slash', 'icons.tip.arrows', 'icons.tip.pane', 'icons.tip.esc', 'icons.tip.share'] as const;
 const MOBILE_TIPS = ['icons.tip.customize', 'icons.tip.category', 'icons.tip.shareShort'] as const;
 
 /** Focus the search box with "/" unless the user is typing somewhere. */
@@ -164,7 +167,9 @@ export function IconsPage() {
   const svgKey = brandsView ? `brands:${brandStyle}` : drawStyle;
 
   const update = useCallback((patch: Partial<CatalogState>, replace = false) => {
-    setParams(serializeState({ ...state, ...patch }, config), { replace, preventScrollReset: true });
+    // A modifier belongs to the icon it was tried on: opening another icon drops it.
+    const reset = 'icon' in patch && !('modifier' in patch) ? { modifier: null, corner: null } : {};
+    setParams(serializeState({ ...state, ...reset, ...patch }, config), { replace, preventScrollReset: true });
   }, [setParams, state]);
 
   const setCollapsed = useCallback((next: boolean) => {
@@ -213,20 +218,60 @@ export function IconsPage() {
   // A retry clears the failed chunks so the grid asks for them again.
   useEffect(() => { if (attempt) setError(null); }, [attempt]);
 
+  // "clock with sparkle": search for the icon part and open the best match with that modifier.
+  // The modifier list is large: load it only for a connector, or a multi-word search with no plain match ("edit clock").
+  const bareCandidate = useMemo(
+    () => !brandsView && /\S\s+\S/.test(state.q) && search(coreIndex, state.q, state.category).length === 0,
+    [brandsView, state.q, state.category],
+  );
+  const phraseModifiers = useModifiers(!brandsView && (hasConnector(state.q) || bareCandidate));
+  const phrase = useMemo(
+    () => (!brandsView && phraseModifiers.list
+      ? parseModifierPhrase(state.q, phraseModifiers.list, (q) => search(coreIndex, q, state.category).length)
+      : null),
+    [brandsView, phraseModifiers.list, state.q, state.category],
+  );
+  const searchQ = phrase?.iconQuery ?? state.q;
+
   const index = brandsView ? brandIndex : coreIndex;
   const results = useMemo(() => {
-    const found = search(index, state.q, state.category);
+    const found = search(index, searchQ, state.category);
     return brandsView ? found.filter((e) => hasBrandStyle(e.name, brandStyle)) : found;
-  }, [index, state.q, state.category, brandsView, brandStyle]);
+  }, [index, searchQ, state.category, brandsView, brandStyle]);
   const elsewhere = useMemo(
-    () => (state.category && state.q && results.length === 0 ? search(index, state.q).length : 0),
-    [index, state.q, state.category, results.length],
+    () => (state.category && searchQ && results.length === 0 ? search(index, searchQ).length : 0),
+    [index, searchQ, state.category, results.length],
   );
-  const noResults = !!state.q.trim() && results.length === 0;
-  const suggestions = useMemo(() => (noResults ? suggest(index, state.q) : []), [noResults, index, state.q]);
+  const noResults = !!searchQ.trim() && results.length === 0;
+  const suggestions = useMemo(() => (noResults ? suggest(index, searchQ) : []), [noResults, index, searchQ]);
   const otherCatalog = useMemo(
-    () => (noResults ? search(brandsView ? coreIndex : brandIndex, state.q).length : 0),
-    [noResults, brandsView, state.q],
+    () => (noResults ? search(brandsView ? coreIndex : brandIndex, searchQ).length : 0),
+    [noResults, brandsView, searchQ],
+  );
+
+  /** The icon a modifier phrase opens: the best result that can take that modifier. */
+  const phraseTarget = useMemo(() => {
+    if (!phrase || !phraseModifiers.list) return null;
+    const list = phraseModifiers.list;
+    return results.find((i) => !i.composition && modifiersFor(i.name, list).some((m) => m.name === phrase.modifier)) ?? null;
+  }, [phrase, phraseModifiers.list, results]);
+  const phraseLabel = phrase && phraseModifiers.list?.find((m) => m.name === phrase.modifier);
+  const appliedPhrase = useRef<string | null>(null);
+  useEffect(() => {
+    if (!phrase || !phraseTarget) return;
+    const key = `${phraseTarget.name}|${phrase.modifier}|${phrase.corner}`;
+    if (appliedPhrase.current === key) return;
+    // Wait for a pause in typing, so "clock with s…" doesn't flicker through modifiers.
+    const timer = window.setTimeout(() => {
+      appliedPhrase.current = key;
+      setMulti([]);
+      update({ icon: phraseTarget.name, modifier: phrase.modifier, corner: phrase.corner }, true);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [phrase, phraseTarget, update]);
+  const badgeRequest = useMemo(
+    () => (state.modifier ? { name: state.modifier, corner: state.corner } : null),
+    [state.modifier, state.corner],
   );
 
   const selected = state.icon ? (brandsView ? brandsByName.get(state.icon) : iconsByName.get(state.icon)) ?? null : null;
@@ -286,7 +331,7 @@ export function IconsPage() {
 
   const categories = brandsView ? brandCategories : catalog.categories;
   const counted = t(brandsView ? 'icons.brandCount' : 'icons.count', { count: results.length });
-  const query = state.q.trim();
+  const query = searchQ.trim();
   const categoryName = state.category ? label('category', state.category, state.category) : '';
   const summary = query && categoryName ? t('icons.summaryForIn', { results: counted, query, category: categoryName })
     : query ? t('icons.summaryFor', { results: counted, query })
@@ -319,6 +364,15 @@ export function IconsPage() {
           value={state.q}
           onChange={(q) => update({ q }, true)}
         />
+        {phrase && phraseTarget && phraseLabel && (
+          <p className="mt-2 flex items-center gap-1.5 px-1 text-xs text-muted">
+            <UiIcon name="sparkles" className="size-3.5 text-brand" />
+            {t('icons.phraseHint', {
+              icon: phraseTarget.name,
+              modifier: label('modifier', phraseLabel.name, phraseLabel.label),
+            })}
+          </p>
+        )}
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -453,6 +507,8 @@ export function IconsPage() {
             onSelectIcon={(icon) => update({ icon })}
             onClose={close}
             headingId="pane-heading"
+            badgeRequest={badgeRequest}
+            onBadgeChange={(choice) => update({ modifier: choice?.name ?? null, corner: choice?.corner ?? null }, true)}
           />
         ) : (
           <CustomizePanel
