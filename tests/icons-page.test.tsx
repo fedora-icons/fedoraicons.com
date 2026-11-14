@@ -447,7 +447,7 @@ describe('Search tips', () => {
     try {
       renderAt('/');
       const tip = () => screen.getByTestId('search-tip').textContent;
-      expect(tip()).toMatch(/^Search 1,252 icons/);
+      expect(tip()).toMatch(/^Search 1,200\+ icons/);
       await act(async () => { vi.advanceTimersByTime(4500); });
       expect(tip()).toMatch(/^Tip: /);
       const shown = tip();

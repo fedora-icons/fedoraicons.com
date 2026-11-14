@@ -1,6 +1,6 @@
 import { createI18n, DEFAULT_LOCALE, LOCALES, localizePath, splitLocale, type I18n, type MessageKey } from '../i18n';
 import { brands } from './brands';
-import { catalog, STYLE_META } from './catalog';
+import { catalog, ICONS_ROUNDED, STYLE_META } from './catalog';
 import { FIGMA_URL, LIBRARY_URL } from './links';
 
 /**
@@ -20,7 +20,8 @@ export const NPM_VUE_URL = 'https://www.npmjs.com/package/@fos-icons/vue';
 export const SHARE_IMAGE = { path: '/og-image.png', width: 1200, height: 630 };
 
 export const facts = {
-  icons: catalog.icons.length,
+  /** Rounded down to the hundred; copy shows it as "1,200+". */
+  icons: ICONS_ROUNDED,
   styles: catalog.styles.map((s) => STYLE_META[s].label),
   categories: catalog.categories,
   modifiers: Object.keys(catalog.modifiers).length,

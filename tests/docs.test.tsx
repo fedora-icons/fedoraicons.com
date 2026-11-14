@@ -38,4 +38,30 @@ describe('Docs page', () => {
     expect(section.textContent).toContain('fos-pane-collapsed');
     expect(section.textContent).toContain('fos-pane-width');
   });
+
+  it('filters sections and the side nav with the search box', async () => {
+    render(<ToastProvider><MemoryRouter><DocsPage /></MemoryRouter></ToastProvider>);
+    const nav = screen.getByRole('navigation', { name: 'Documentation' });
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Search the docs' }), 'fos-theme');
+    expect(document.getElementById('privacy')!.hidden).toBe(false);
+    expect(document.getElementById('react')!.hidden).toBe(true);
+    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Privacy']);
+    expect(screen.getByText('1 section matches').getAttribute('role')).toBe('status');
+  });
+
+  it('needs every word to match, and offers to clear when nothing does', async () => {
+    render(<ToastProvider><MemoryRouter><DocsPage /></MemoryRouter></ToastProvider>);
+    const box = screen.getByRole('searchbox', { name: 'Search the docs' });
+    await userEvent.type(box, 'figma zzqx');
+    expect(document.querySelectorAll('section:not([hidden])')).toHaveLength(0);
+    // "Copy" button labels are not searchable content.
+    await userEvent.clear(box);
+    await userEvent.type(box, 'copy');
+    expect(document.getElementById('colors')!.hidden).toBe(true);
+    await userEvent.clear(box);
+    await userEvent.type(box, 'zzqx');
+    await userEvent.click(screen.getAllByRole('button', { name: 'Clear search' }).at(-1)!);
+    expect(box).toHaveProperty('value', '');
+    expect(document.querySelectorAll('section[hidden]')).toHaveLength(0);
+  });
 });

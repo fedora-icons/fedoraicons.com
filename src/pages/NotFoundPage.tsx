@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LocalLink, useI18n } from '../i18n';
 import { UiIcon, type UiIconName } from '../components/ui';
-import { catalog } from '../lib/catalog';
+import { catalog, ICONS_ROUNDED } from '../lib/catalog';
 import { CONTAINER } from '../lib/layout';
 
 
@@ -39,7 +39,7 @@ export default function NotFoundPage() {
             {rich('notFound.title', { em: (text) => <span className="text-brand">{text}</span> })}
           </h1>
           <p className="mt-4 max-w-lg text-base text-muted sm:text-lg">
-            {t('notFound.body', { count: catalog.icons.length })}
+            {t('notFound.body', { count: ICONS_ROUNDED })}
           </p>
 
           <form role="search" onSubmit={submit} className="mt-8 flex max-w-lg gap-2">
